@@ -80,18 +80,37 @@ Reverse the Classic ML pipeline: *"bring **computation** to the data"*
 Flower provides the infrastructure to do exactly that in an easy, scalable, and secure way. In short, Flower presents a unified approach to federated learning, analytics, and evaluation. It allows the user to federate any workload, any ML framework, and any programming language.
 
 ### "Hello World" Example
-Run the following console commands (you will need 3 terminals running in total):
-- Terminal 1:
+Run the following console commands (you will need 3 terminals running in total)
+
+Terminal 1:
+
+Install the dependencies first
+
+```
+# could also be pip3 | pip3.x depending on your local configuration
+# make sure you are in the root directory of the project
+pip install -r requirements.txt
+```
+
+Then go to the example directory
+
 `cd flower-helloworld`
+
+Start the server
+
 ```
 # could also be python3 | python3.x depending on your local configuration
 # IMPORTANT: you need to run this first, before starting the clients
 python server.py
 ```
-- Terminals 2 & 3:
+
+Terminals 2 & 3:
+
 `cd flower-helloworld`
+
 ```
 # could also be python3 | python3.x depending on your local configuration
 python client.py
 ```
+
 This sequence of commands allows to run the simulation of federated learning with 2 clients
