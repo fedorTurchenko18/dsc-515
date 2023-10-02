@@ -6,15 +6,15 @@ Content-Based Image Retrieval (CBIR): Implement a system that allows users to se
 
 Additionally, the study will employ Flower framework for Federated Learning implementation to explore how different Deep Learning frameworks, namely JAX/Pytorch/TensorFlow, influence the performance of a single model architecture.
 
-## Project Board
-
-The [following](https://miro.com/app/board/uXjVMh9LxnY=/?share_link_id=535088326052) Miro board provides a graphical description of the project.
-
 ## Data Source
 
 [Amazon Berkeley Objects (ABO)](https://registry.opendata.aws/amazon-berkeley-objects/) is a collection of 147,702 product listings with multilingual metadata and 398,212 unique catalog images. 8,222 listings come with turntable photography (also referred as "spin" or "360º-View" images), as sequences of 24 or 72 images, for a total of 586,584 images in 8,209 unique sequences. For 7,953 products, the collection also provides high-quality 3d models, as glTF 2.0 files.
 
 This project requires only the usage of downscaled (max 256 pixels) catalog images and metadata (3 Gb).
+
+## Project Board
+
+The [following](https://miro.com/app/board/uXjVMh9LxnY=/?share_link_id=535088326052) Miro board provides a graphical description of the project.
 
 ## Federated Learning Concept
 
