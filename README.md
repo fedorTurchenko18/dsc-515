@@ -21,10 +21,23 @@
 ## Federated Learning Solution
 Reverse the Classic ML pipeline: *"bring computation to the data"*
 
-### Step 0 – Initialize the model
+### Step 0: Initialize the model
 - Initialize the global model on the global server
 <img src="https://flower.dev/docs/framework/_images/fl-initialize-global-model.png" alt="Step 0" width="400"/>
 
-### Step 1 - Send the parameters of the global model to the connected client nodes
+### Step 1: Send the parameters of the global model to the connected client nodes
 - This is to ensure that each participating node starts their local training using the same model parameters
 <img src="https://flower.dev/docs/framework/_images/fl-send-global-model.png" alt="Step 1" width="400"/>
+
+### Step 2: Train model locally on the data of each organization/device (client node)
+- They use their own local dataset to train their own local model
+- They don’t train the model until full convergence, but they only train for a little while
+- This could be as little as one epoch on the local data, or even just a few steps (mini-batches)
+<img src="https://flower.dev/docs/framework/_images/fl-send-model-updates.png" alt="Step 2" width="400"/>
+
+### Step 3: Return model updates back to the server
+- After local training, each client node has a slightly different version of the model parameters they originally received
+- The parameters are all different because each client node has different examples in its local dataset
+- The client nodes then send those model updates back to the server
+- The model updates they send can either be the full model parameters or just the gradients that were accumulated during local training
+<img src="https://flower.dev/docs/framework/_images/fl-send-model-updates.png" alt="Step 3" width="400"/>
