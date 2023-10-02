@@ -2,7 +2,7 @@
 
 ## Project Goal
 
-Content-Based Image Retrieval (CBIR): Implement a system that allows users to search for products using images as queries. Users can upload an image, and the system finds similar products in your catalog. When dealing with CBIR task, convolutional neural networks (CNNs) are commonly used due to their effectiveness in image feature extraction.
+Content-Based Image Retrieval (CBIR) task: Implement a system that allows users to search for products using images as queries. Users can upload an image, and the system finds similar products in the catalog. We will create an image search engine which will allow users to upload the image of a desired product and return top-5 matches from the catalogue with corresponding Amazon URLs. When dealing with CBIR task, convolutional neural networks (CNNs) are commonly used due to their effectiveness in image feature extraction, and so this is the type of network we will train.
 
 Additionally, the study will employ Flower framework for Federated Learning implementation to explore how different Deep Learning frameworks, namely JAX/Pytorch/TensorFlow, influence the performance of a single model architecture.
 
