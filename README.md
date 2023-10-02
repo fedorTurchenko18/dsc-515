@@ -61,6 +61,7 @@ Reverse the Classic ML pipeline: *"bring **computation** to the data"*
      - It takes the weighted average of the model updates, weighted by the number of examples each client used for training
      - The weighting is important to make sure that each data example has the same “influence” on the resulting global model
      - If one client has 10 examples, and another client has 100 examples, then - without weighting - each of the 10 examples would influence the global model ten times as much as each of the 100 examples
+<img src="https://flower.dev/docs/framework/_images/fl-aggregate-model-updates.png" alt="Step 4" width="400"/>
 
 #### Step 5: Repeat steps 1 to 4 until the model converges
 - The loop is wrapped up as follows:
@@ -70,3 +71,6 @@ Reverse the Classic ML pipeline: *"bring **computation** to the data"*
      - The server then aggregates the model updates to get a new version of the global model (step 4)
 - After the aggregation step (step 4), we have a model that has been trained on all the data of all participating client nodes, but only for a little while
 - We then have to repeat this training process over and over again to eventually arrive at a fully trained model that performs well across the data of all client nodes
+
+## Flower Frameweork
+Flower provides the infrastructure to do exactly that in an easy, scalable, and secure way. In short, Flower presents a unified approach to federated learning, analytics, and evaluation. It allows the user to federate any workload, any ML framework, and any programming language.
