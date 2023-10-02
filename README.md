@@ -84,15 +84,14 @@ Run the following console commands (you will need 3 terminals running in total):
 - Terminal 1:
 `cd flower-helloworld`
 ```
-# could also be python3 | python3.x
-# depending on your local configuration
+# could also be python3 | python3.x depending on your local configuration
+# IMPORTANT: you need to run this first, before starting the clients
 python server.py
 ```
 - Terminals 2 & 3:
 `cd flower-helloworld`
 ```
-# could also be python3 | python3.x
-# depending on your local configuration
+# could also be python3 | python3.x depending on your local configuration
 python client.py
 ```
 This sequence of commands allows to run the simulation of federated learning with 2 clients
