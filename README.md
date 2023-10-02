@@ -1,2 +1,2 @@
 # dsc-515
-UCY DSC 571 Deep Learning Project
+UCY DSC 515 Deep Learning Project
