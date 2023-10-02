@@ -47,3 +47,12 @@ Reverse the Classic ML pipeline: *"bring **computation** to the data"*
      - It takes the weighted average of the model updates, weighted by the number of examples each client used for training
      - The weighting is important to make sure that each data example has the same “influence” on the resulting global model
      - If one client has 10 examples, and another client has 100 examples, then - without weighting - each of the 10 examples would influence the global model ten times as much as each of the 100 examples
+
+### Step 5: Repeat steps 1 to 4 until the model converges
+- The loop is wrapped up as follows:
+     - The global model parameters get sent to the participating client nodes (step 1)
+     - The client nodes train on their local data (step 2)
+     - They send their updated models to the server (step 3)
+     - The server then aggregates the model updates to get a new version of the global model (step 4)
+- After the aggregation step (step 4), we have a model that has been trained on all the data of all participating client nodes, but only for a little while
+- We then have to repeat this training process over and over again to eventually arrive at a fully trained model that performs well across the data of all client nodes
