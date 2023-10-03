@@ -120,3 +120,6 @@ python client.py
 Terminal 3:
 
 Repeat the same actions as for Terminal 2
+
+### Flower on s3
+TODO: study the following [article](https://aws.amazon.com/blogs/machine-learning/machine-learning-with-decentralized-training-data-using-federated-learning-on-amazon-sagemaker/)
