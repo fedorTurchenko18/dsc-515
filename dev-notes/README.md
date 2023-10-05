@@ -4,11 +4,11 @@ The general git tree should be as follows:
 ```
 main
 └───dev
-│   └───feature_branch_1
-│   └───feature_branch_2
-│   └───feature_branch_3
-│   ...
-│   └───feature_branch_n
+    └───feature_branch_1
+    └───feature_branch_2
+    └───feature_branch_3
+    ...
+    └───feature_branch_n
 ```
 
 `main` – only the production code, namely, bug-free code with all requirements specified in requirements.txt (remote branch)
