@@ -11,13 +11,14 @@ main
 │   └───feature_branch_n
 ```
 
-`main` – only the production code, namely, bug-free code with all requirements specified in requirements.txt
-`dev` – testing environment:
+`main` – only the production code, namely, bug-free code with all requirements specified in requirements.txt (remote branch)
+
+`dev` – testing environment (remote branch):
 - code needs some tests
 - requirements are not complete
 - etc.
 
-`feature_branch_*` – development environment
+`feature_branch_*` – development environment (local branches only)
 
 # Process Flow
 
