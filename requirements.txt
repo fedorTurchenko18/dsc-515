@@ -2,3 +2,4 @@ tensorflow==2.14.0
 flwr==1.5.0
 pyOpenSSL==23.2.0
 cryptography==41.0.4
+scikit-learn==1.1.1
