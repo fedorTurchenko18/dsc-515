@@ -8,7 +8,7 @@ folder = 'phone_cases_images'
 if not os.path.exists(folder):
     os.makedirs(folder)
 
-PATH = '/Users/grigoryturchenko/Downloads/abo-images-small/images/small'
+PATH = 'D:/abo/images/small'
 
 metadata = pd.read_csv('../metadata/images_phone_cases.csv')['path']
 
