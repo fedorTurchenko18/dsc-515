@@ -52,8 +52,8 @@ class HGFresource:
             train_images.dropna(inplace=True)
             # reset index for proper concatenation
             train_images.reset_index(drop=True, inplace=True)
-            # concatenate
-            train_images = np.concatenate(train_images)
+            # concatenate with float data type so that further preprocessing can be implemented
+            train_images = np.concatenate(train_images, dtype=np.float16)
             train_labels = train['label'].values
 
             test = dataset['test'].to_pandas()
@@ -66,7 +66,7 @@ class HGFresource:
             test_images = test_images.apply(lambda x: x if len(x.shape) == 4 else np.nan)
             test_images.dropna(inplace=True)
             test_images.reset_index(drop=True, inplace=True)
-            test_images = np.concatenate(test_images)
+            test_images = np.concatenate(test_images, dtype=np.float16)
             test_labels = test['label'].values
 
             return train_images, train_labels, test_images, test_labels
@@ -81,7 +81,7 @@ class HGFresource:
             images = images.apply(lambda x: x if len(x.shape) == 4 else np.nan)
             images.dropna(inplace=True)
             images.reset_index(drop=True, inplace=True)
-            images = np.concatenate(images)
+            images = np.concatenate(images, dtype=np.float16)
             labels = df['label'].values
             return images, labels
 
