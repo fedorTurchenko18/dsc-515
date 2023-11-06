@@ -11,7 +11,7 @@ class HGFresource:
         # keep private
         self.__token = token
 
-    def load_data(self, repo: str, sets: Literal['train', 'test', 'all']) -> Tuple[pd.Series]:
+    def load_data(self, repo: str, sets: Literal['train', 'test', 'all']) -> Tuple[np.ndarray]:
         '''
         Load dataset(s) from Hugging Face organization repository
 
@@ -28,7 +28,7 @@ class HGFresource:
         Returns
         -------
 
-        `Tuple[pd.Series]`
+        `Tuple[np.ndarray]`
             If `sets='train'` or `sets='test'`, returns corresponding images (converted to array) and labels, i.e. `images, labels` \n
             Otherwise, returns all train and test images (converted to array) and labels, i.e. `train_images, train_labels, test_images, test_labels`
         '''
@@ -37,17 +37,51 @@ class HGFresource:
         
         if sets == 'all':
             train = dataset['train'].to_pandas()
-            train_images = train['image'].apply(lambda x: cv2.imdecode(np.frombuffer(x['bytes'], np.uint8), -1))
+            # convert images from bytes to numpy array
+            train_images = train['image'].apply(
+                          # by default RGB images produce 3d arrays
+                          # but since we want final array of all images to be 4d
+                          # we add an empty dimension along which images will be concatenated
+                lambda x: np.expand_dims(
+                    cv2.imdecode(np.frombuffer(x['bytes'], np.uint8), -1),
+                    0
+                )
+            )
+            # remove images with invalid dimensions
+            train_images = train_images.apply(lambda x: x if len(x.shape) == 4 else np.nan)
+            train_images.dropna(inplace=True)
+            # reset index for proper concatenation
+            train_images.reset_index(drop=True, inplace=True)
+            # concatenate
+            train_images = np.concatenate(train_images)
             train_labels = train['label'].values
 
             test = dataset['test'].to_pandas()
-            test_images = test['image'].apply(lambda x: cv2.imdecode(np.frombuffer(x['bytes'], np.uint8), -1))
+            test_images = test['image'].apply(
+                lambda x: np.expand_dims(
+                    cv2.imdecode(np.frombuffer(x['bytes'], np.uint8), -1),
+                    0
+                )
+            )
+            test_images = test_images.apply(lambda x: x if len(x.shape) == 4 else np.nan)
+            test_images.dropna(inplace=True)
+            test_images.reset_index(drop=True, inplace=True)
+            test_images = np.concatenate(test_images)
             test_labels = test['label'].values
 
             return train_images, train_labels, test_images, test_labels
         else:
             df = dataset[sets].to_pandas()
-            images = df['image'].apply(lambda x: cv2.imdecode(np.frombuffer(x['bytes'], np.uint8), -1))
+            images = df['image'].apply(
+                lambda x: np.expand_dims(
+                    cv2.imdecode(np.frombuffer(x['bytes'], np.uint8), -1),
+                    0
+                )
+            )
+            images = images.apply(lambda x: x if len(x.shape) == 4 else np.nan)
+            images.dropna(inplace=True)
+            images.reset_index(drop=True, inplace=True)
+            images = np.concatenate(images)
             labels = df['label'].values
             return images, labels
 
