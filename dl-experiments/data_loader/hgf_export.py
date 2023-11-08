@@ -12,7 +12,13 @@ class HGFresource:
         # keep private
         self.__token = token
 
-    def load_data_tfds(self, repo: str, batch_size: int) -> Tuple:
+    def load_data_tfds(
+            self,
+            repo: str,
+            batch_size: int,
+            perform_split: bool = False,
+            train_size: float = None
+    ) -> Tuple:
         '''
         Load datasets from Hugging Face organization repository as a Tensorflow MapDataset object
 
@@ -25,6 +31,11 @@ class HGFresource:
         batch_size : int
             Desired batch size for the model training
 
+        perform_split : bool = False
+            Whether to perform train-validation split of the training set. No split by default
+
+        train_size : float = None
+            If split is performed, the share of the training subset
         Returns
         -------
 
@@ -42,8 +53,13 @@ class HGFresource:
         HGF_TOPIC_MODEL_REPO = os.environ['HUGGINGFACE_TOPIC_MODEL_REPO']
 
         hgf = HGFresource(token=HGF_TOKEN)
+
+        # Default data load
         train_data, test_data = hgf.load_data_tfds(repo=HGF_DATA_REPO, batch_size=32)
 
+        # Data load with additional split of the train data 
+        train_data_split, val_data_split, test_data_split = hgf.load_data_tfds(repo=HGF_DATA_REPO, batch_size=32, perform_split=True, train_size=0.7)
+        
         OPTIMIZER = 'adam'
         LOSS = 'categorical_crossentropy'
         METRICS = [tf.keras.metrics.F1Score('weighted')]
@@ -81,16 +97,21 @@ class HGFresource:
         ```
         '''
         dataset = load_dataset(repo, token=self.__token)
-        
         train_data = dataset['train']
-        train_data = self.__process_dataset(train_data, batch_size)
-
         test_data = dataset['test']
-        test_data = self.__process_dataset(test_data, batch_size)
 
-        return train_data, test_data
+        if perform_split == False:
+            train_data = self.__process_dataset(train_data, batch_size, perform_split, train_size)
+            test_data = self.__process_dataset(test_data, batch_size, perform_split, train_size)
+            return train_data, test_data
+        
+        else:
+            train_data, val_data = self.__process_dataset(train_data, batch_size, True, train_size)
+            test_data = self.__process_dataset(test_data, batch_size, False, None)
+            return train_data, val_data, test_data
+        
 
-    def __process_dataset(self, dataset, batch_size):
+    def __process_dataset(self, dataset, batch_size, perform_split, train_size):
         def preprocess_images(examples):
             examples['image'] = [tf.cast(image.convert('RGB'), tf.float32) / 255.0 for image in examples['image']]
             return examples
@@ -102,17 +123,48 @@ class HGFresource:
             example = {'label': zeros}
             return example
         
-        dataset = dataset.map(preprocess_labels, input_columns=['label'])
-        dataset = dataset.with_transform(preprocess_images, ['image'], True)
+        if perform_split == False:
+            dataset = dataset.map(preprocess_labels, input_columns=['label'])
+            dataset = dataset.with_transform(preprocess_images, ['image'], True)
 
-        dataset = dataset.to_tf_dataset(
-            columns=["image"],
-            label_cols=["label"],
-            batch_size=batch_size,
-            shuffle=True,
-            prefetch=False
-        )
-        return dataset
+            dataset = dataset.to_tf_dataset(
+                columns="image",
+                label_cols="label",
+                batch_size=batch_size,
+                shuffle=True,
+                prefetch=False
+            )
+            return dataset
+        
+        else:
+            dataset = dataset.train_test_split(train_size=train_size, stratify_by_column="label", seed=515)
+            
+            train = dataset['train']
+            test = dataset['test']
+
+            train = train.map(preprocess_labels, input_columns=['label'])
+            train = train.with_transform(preprocess_images, ['image'], True)
+
+            train = train.to_tf_dataset(
+                columns="image",
+                label_cols="label",
+                batch_size=batch_size,
+                shuffle=True,
+                prefetch=False
+            )
+
+            test = test.map(preprocess_labels, input_columns=['label'])
+            test = test.with_transform(preprocess_images, ['image'], True)
+            
+            test = test.to_tf_dataset(
+                columns="image",
+                label_cols="label",
+                batch_size=batch_size,
+                shuffle=True,
+                prefetch=False
+            )
+            return train, test
+        
 
     def load_data(self, repo: str, sets: Literal['train', 'test', 'all'], sample_fraction: float) -> Tuple[np.ndarray]:
         '''
