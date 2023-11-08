@@ -1,4 +1,4 @@
-import cv2, numpy as np, pandas as pd, random
+import cv2, numpy as np, pandas as pd, random, tensorflow as tf
 from typing import Tuple, Literal, List
 from huggingface_hub import login, logout
 from bertopic import BERTopic
@@ -11,6 +11,108 @@ class HGFresource:
     def __init__(self, token):
         # keep private
         self.__token = token
+
+    def load_data_tfds(self, repo: str, batch_size: int) -> Tuple:
+        '''
+        Load datasets from Hugging Face organization repository as a Tensorflow MapDataset object
+
+        Parameters
+        ----------
+
+        repo : str
+            Path to the data repo on Hugging Face
+
+        batch_size : int
+            Desired batch size for the model training
+
+        Returns
+        -------
+
+        Since the object returned by this function is somewhat unfamiliar (both images and labels combined into a single structure),
+        below is the quickstart code example (also available in the load_as_tfds.ipynb):
+        
+        ```
+        import os, numpy as np, tensorflow as tf
+        from data_loader.hgf_export import HGFresource
+        from dotenv import load_dotenv
+        load_dotenv()
+
+        HGF_TOKEN = os.environ['HUGGINGFACE_TOKEN']
+        HGF_DATA_REPO = os.environ['HUGGINGFACE_DATASET_REPO']
+        HGF_TOPIC_MODEL_REPO = os.environ['HUGGINGFACE_TOPIC_MODEL_REPO']
+
+        hgf = HGFresource(token=HGF_TOKEN)
+        train_data, test_data = hgf.load_data_tfds(repo=HGF_DATA_REPO, batch_size=32)
+
+        OPTIMIZER = 'adam'
+        LOSS = 'categorical_crossentropy'
+        METRICS = [tf.keras.metrics.F1Score('weighted')]
+
+        EPOCHS = 20
+
+        INPUT_SHAPE = (256, 219, 3)
+        N_CLASSES = 29
+
+        model = tf.keras.models.Sequential(
+            [
+                tf.keras.layers.Conv2D(16, (3, 3), activation='relu', input_shape=INPUT_SHAPE),
+                tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+                tf.keras.layers.Conv2D(32, (3, 3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+                tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(128, activation='relu'),
+                tf.keras.layers.Dense(N_CLASSES, activation='softmax')
+            ]
+        )
+
+        model.compile(
+            OPTIMIZER,
+            LOSS,
+            METRICS
+        )
+
+        history = model.fit(
+            train_data,
+            epochs=EPOCHS,
+            validation_data=test_data
+        )
+        ```
+        '''
+        dataset = load_dataset(repo, token=self.__token)
+        
+        train_data = dataset['train']
+        train_data = self.__process_dataset(train_data, batch_size)
+
+        test_data = dataset['test']
+        test_data = self.__process_dataset(test_data, batch_size)
+
+        return train_data, test_data
+
+    def __process_dataset(self, dataset, batch_size):
+        def preprocess_images(examples):
+            examples['image'] = [tf.cast(image.convert('RGB'), tf.float32) / 255.0 for image in examples['image']]
+            return examples
+
+        def preprocess_labels(example):
+            zeros = np.zeros(29)
+            np.put(zeros, example, 1)
+            zeros = tf.convert_to_tensor(zeros)
+            example = {'label': zeros}
+            return example
+        
+        dataset = dataset.map(preprocess_labels, input_columns=['label'])
+        dataset = dataset.with_transform(preprocess_images, ['image'], True)
+
+        dataset = dataset.to_tf_dataset(
+            columns=["image"],
+            label_cols=["label"],
+            batch_size=batch_size,
+            shuffle=True,
+            prefetch=False
+        )
+        return dataset
 
     def load_data(self, repo: str, sets: Literal['train', 'test', 'all'], sample_fraction: float) -> Tuple[np.ndarray]:
         '''
