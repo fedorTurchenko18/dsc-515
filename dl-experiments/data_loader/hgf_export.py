@@ -85,7 +85,7 @@ class HGFresource:
             test_images = test_images[test_images.index.isin(TEST_INDICES_REMAINED)]
             test_images.reset_index(drop=True, inplace=True)
             test_images = np.concatenate(test_images, dtype=np.float16)
-            test_labels = test_labels[test_labels.index.isin(TRAIN_INDICES_REMAINED)].values
+            test_labels = test_labels[test_labels.index.isin(TEST_INDICES_REMAINED)].values
 
             return train_images, train_labels, test_images, test_labels
         else:
