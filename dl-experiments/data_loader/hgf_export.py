@@ -140,12 +140,13 @@ class HGFresource:
             label: int(DESIRED_SAMPLES * count / N_ROWS)
             for label, count in target_freqs.items()
         }
-
+        
         sampled_data_indices = []
         for label, count in target_freqs.items():
             class_data = labels[labels==label].index.tolist()
             samples_to_take = min(sampling_ratios[label], count)
-
+            # assure reproducibility
+            random.seed(42)
             # sample indices for the given class
             sampled_data_indices.extend(
                 random.sample(class_data, samples_to_take)
