@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  server:
+    build: ./server
+    ports:
+      - "8080:8080"
+
+  client1:
+    build: ./client
+    depends_on:
+      - server
+    environment:
+      - DATA_N=3
+    command: ["--data_index", "0"]
+    
+  client2:
+    build: ./client
+    depends_on:
+      - server
+    environment:
+      - DATA_N=3
+    command: ["--data_index", "1"]
+    
+  client3:
+    build: ./client
+    depends_on:
+      - server
+    environment:
+      - DATA_N=3
+    command: ["--data_index", "2"]
