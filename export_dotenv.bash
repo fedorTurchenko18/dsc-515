@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Script to export new environment variables
 # run as:
 # bash export_dotenv.bash

@@ -13,9 +13,6 @@ class HGFresource:
         '''
         token: str
             HuggingFace access token generated at https://huggingface.co/settings/tokens
-        
-        n_classes: Optional[int]
-            Number of classes of target variable
         '''
         # keep private
         self.__token = token
