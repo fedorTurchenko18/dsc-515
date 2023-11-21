@@ -1,9 +1,19 @@
 clients:
   ImageId: ami-05c13eab67c5d8861
   InstanceType: t2.medium
+  BlockDeviceMappings:
+    - DeviceName: '/dev/sdh'
+      Ebs:
+        VolumeSize: 16
+        VolumeType: gp3
 
 server:
   ImageId: ami-05c13eab67c5d8861
   MinCount: 1
   MaxCount: 1
   InstanceType: t2.small
+  BlockDeviceMappings:
+    - DeviceName: '/dev/sdh'
+      Ebs:
+        VolumeSize: 16
+        VolumeType: gp3

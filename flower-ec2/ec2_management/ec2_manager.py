@@ -1,20 +1,12 @@
-import boto3
-import yaml
+import boto3, yaml
+from botocore.exceptions import ClientError
 from typing import Literal, List
 
 with open('ec2_management/ec2_config.yaml', 'rb') as f:
     ec2_config = yaml.safe_load(f)
 
-CLIENT_IMAGE_ID = ec2_config['clients']['ImageId']
-CLIENT_INSTANCE_TYPE = ec2_config['clients']['InstanceType']
 
-SERVER_IMAGE_ID = ec2_config['server']['ImageId']
-SERVER_MIN_COUNT = ec2_config['server']['MinCount']
-SERVER_MAX_COUNT = ec2_config['server']['MaxCount']
-SERVER_INSTANCE_TYPE = ec2_config['server']['InstanceType']
-
-
-class EC2Client:
+class EC2Manager:
     '''
     Class for managing of ec2 instances
     '''
@@ -36,6 +28,13 @@ class EC2Client:
             AWS .pem file name
         '''
         self.__key_pair = aws_key_pair
+        self.resource = boto3.resource(
+            'ec2',
+            aws_access_key_id=aws_access_key,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            region_name=aws_region
+        )
         self.client = boto3.client(
             'ec2',
             aws_access_key_id=aws_access_key,
@@ -45,7 +44,7 @@ class EC2Client:
         )
 
 
-    def create_instance(self, instance_type: Literal['server', 'clients'], startup_script_path: str, n_instances: int = 2):
+    def create_instance(self, instance_type: Literal['server', 'clients'], startup_script: str, n_instances: int = 2):
         '''
         Create ec2 instance
 
@@ -53,10 +52,11 @@ class EC2Client:
         ----------
 
         instance_type : Literal['server', 'clients']
-            Type of instance, respective to Flower's client-server paradigm
+            Type of instance, respective to Flower's resource-server paradigm
 
-        startup_script_path : str
-            Path of the script to run on ec2 instance start-up
+        startup_script : str
+            Script to run on ec2 instance start-up. 
+            Should be read through context manager from .txt file
         
         n_instances : int = 2
             How many instances to create. Only passed to the routine which creates clients
@@ -64,30 +64,44 @@ class EC2Client:
         Returns
         -------
 
-        List of `self.client.Instance`
+        List of `self.resource.Instance`
         '''
         if instance_type=='clients':
-            instance = self.client.run_instances(
-                ImageId=CLIENT_IMAGE_ID,
+            instance = self.resource.create_instances(
                 MinCount=n_instances,
                 MaxCount=n_instances,
-                InstanceType=CLIENT_INSTANCE_TYPE,
                 KeyName=self.__key_pair,
-                UserData=f'file://{startup_script_path}'
+                UserData=startup_script,
+                **ec2_config['clients']
             )
-            # assure the instance is running before moving to the next steps
-            instance.wait_until_running()
+            # assure the last created instance is running and fully initialized before moving to the next steps
+            waiter = self.client.get_waiter('instance_status_ok')
+            waiter.wait(
+                Filters=[
+                    {
+                        'Name': 'instance-status.reachability',
+                        'Values': ['passed']
+                    },
+                ],
+                InstanceIds=[i.instance_id for i in instance]
+            )
         elif instance_type=='server':
-            instance = self.client.run_instances(
-                ImageId=SERVER_IMAGE_ID,
-                MinCount=SERVER_MIN_COUNT,
-                MaxCount=SERVER_MAX_COUNT,
-                InstanceType=SERVER_INSTANCE_TYPE,
+            instance = self.resource.create_instances(
                 KeyName=self.__key_pair,
-                UserData=f'file://{startup_script_path}'
+                UserData=startup_script,
+                **ec2_config['server']
             )
-            # assure the instance is running before moving to the next steps
-            instance.wait_until_running()
+            # assure the last created instance is running and fully initialized before moving to the next steps
+            waiter = self.client.get_waiter('instance_status_ok')
+            waiter.wait(
+                Filters=[
+                    {
+                        'Name': 'instance-status.reachability',
+                        'Values': ['passed']
+                    },
+                ],
+                InstanceIds=[i.instance_id for i in instance]
+            )
         
         return instance
     
@@ -107,7 +121,7 @@ class EC2Client:
 
         Operation response in a JSON format
         '''
-        response = self.client.terminate_instances(InstanceIds=instance_ids)
+        response = self.resource.terminate_instances(InstanceIds=instance_ids)
         return response
     
 
@@ -125,7 +139,8 @@ class EC2Client:
 
         port_number : int
             Number of port to open \n
-            8080 by default as this is the port demanded by Flower
+            8080 is the port demanded by Flower \n
+            22 is the one required for SSH connections in case it is of interest
 
         Returns
         -------
@@ -142,19 +157,23 @@ class EC2Client:
             sg_response = self.__create_security_group()
             # get its ID
             security_group_id = sg_response['GroupId']  
-        # compile the request to open port
-        response = self.client.authorize_security_group_ingress(
-            GroupId=security_group_id,
-            IpPermissions=[
-                {
-                    'IpProtocol': 'tcp',
-                    'FromPort': port_number,
-                    'ToPort': port_number,
-                    'IpRanges': [{'CidrIp': '0.0.0.0/0'}] # allows TCP traffic on port 8080 from any IP address (0.0.0.0/0)
-                }
-            ]
-        )
-        return response
+        try:   
+            # compile the request to open port
+            response = self.client.authorize_security_group_ingress(
+                GroupId=security_group_id,
+                IpPermissions=[
+                    {
+                        'IpProtocol': 'tcp',
+                        'FromPort': port_number,
+                        'ToPort': port_number,
+                        'IpRanges': [{'CidrIp': '0.0.0.0/0'}] # allows TCP traffic on port 8080 from any IP address (0.0.0.0/0)
+                    }
+                ]
+            )
+            return response
+        except ClientError:
+            # request failed
+            return {'warning': 'rule already created, skipping action'}
 
 
     def __create_security_group(self, group_name: str = 'flower-ec2-group', description: str = 'group to open port 8080 on flower server instance') -> dict:
@@ -182,7 +201,7 @@ class EC2Client:
         return response
 
 
-class EC2Instance(EC2Client):
+class EC2Instance(EC2Manager):
     '''
     Class for accessing and performing actions on indivdual ec2 instance
     '''
@@ -200,7 +219,7 @@ class EC2Instance(EC2Client):
     #     Create and assign security group with opened 8080 port rule to instance
     #     '''
     #     # Get the current security group IDs associated with the instance
-    #     response = self.client.describe_instances(InstanceIds=[self.instance_id])
+    #     response = self.resource.describe_instances(InstanceIds=[self.instance_id])
     #     current_security_group_ids = response['Reservations'][0]['Instances'][0]['SecurityGroups']
 
     #     # Extract the existing security group IDs
@@ -218,7 +237,7 @@ class EC2Instance(EC2Client):
     #         existing_security_group_ids.append(security_group_id_to_add)
 
     #     # Modify the instance to include the updated security group IDs
-    #     self.client.modify_instance_attribute(
+    #     self.resource.modify_instance_attribute(
     #         InstanceId=self.instance_id,
     #         Groups=existing_security_group_ids
     #     )

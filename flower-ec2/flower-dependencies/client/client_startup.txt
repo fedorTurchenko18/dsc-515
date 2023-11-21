@@ -1,19 +1,31 @@
 #!/bin/bash
 
+# set debug mode
+set -x
+
 # set public IP of the server instance
-$public_ip = 0.0.0.0
+export PUBLIC_IP=54.165.159.123
+
 # install pip and git
-sudo yum -y install python-pip
-sudo yum install git
+sudo yum -y install python3-pip
+sudo yum -y install git
+
 # clone repository but fetch only needed directory (saves time)
 git clone --depth 1 --filter=blob:none --no-checkout https://github.com/fedorTurchenko18/dsc-515.git
 cd ~/dsc-515
 git sparse-checkout init --cone
 git sparse-checkout set flower-ec2/flower-dependencies/client
 git checkout
+
 # move to the directory
 cd flower-ec2/flower-dependencies/client
+
 # install the requirements
-pip install -r -requirements.txt
+# note: installation from requirements.txt file does not work
+# that is why we install them one-by-one
+while read -r package; do
+    pip install "$package"
+done < requirements.txt
+
 # run the server script
-python3 client.py --public_ip $public_ip
+python3 client.py --public_ip $PUBLIC_IP
