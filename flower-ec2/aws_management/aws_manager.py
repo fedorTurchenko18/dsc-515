@@ -1,19 +1,23 @@
 import boto3, yaml
 from botocore.exceptions import ClientError
 from typing import Literal, List
+from loguru import logger
 
-with open('ec2_management/ec2_config.yaml', 'rb') as f:
+with open('aws_management/ec2_config.yaml', 'rb') as f:
     ec2_config = yaml.safe_load(f)
 
 
-class EC2Manager:
+class AWSManager:
     '''
     Class for managing of ec2 instances
     '''
-    def __init__(self, aws_access_key: str, aws_secret_access_key: str, aws_session_token: str, aws_region: Literal['us-east-1', 'us-west-2'], aws_key_pair: str) -> None:
+    def __init__(self, service: Literal['ec2', 's3'], aws_access_key: str, aws_secret_access_key: str, aws_session_token: str, aws_region: Literal['us-east-1', 'us-west-2'], aws_key_pair: str) -> None:
         '''
         Parameters
         ----------
+
+        service : Literal['ec2', 's3']
+            For which service 
 
         aws_access_key : str
             Access key from AWS credentials
@@ -28,15 +32,16 @@ class EC2Manager:
             AWS .pem file name
         '''
         self.__key_pair = aws_key_pair
+        self.__region = aws_region
         self.resource = boto3.resource(
-            'ec2',
+            service,
             aws_access_key_id=aws_access_key,
             aws_secret_access_key=aws_secret_access_key,
             aws_session_token=aws_session_token,
             region_name=aws_region
         )
         self.client = boto3.client(
-            'ec2',
+            service,
             aws_access_key_id=aws_access_key,
             aws_secret_access_key=aws_secret_access_key,
             aws_session_token=aws_session_token,
@@ -44,7 +49,7 @@ class EC2Manager:
         )
 
 
-    def create_instance(self, instance_type: Literal['server', 'clients'], startup_script: str, n_instances: int = 2):
+    def create_instance(self, instance_type: Literal['server', 'clients'], startup_script: str, n_instances: int):
         '''
         Create ec2 instance
 
@@ -58,7 +63,7 @@ class EC2Manager:
             Script to run on ec2 instance start-up. 
             Should be read through context manager from .txt file
         
-        n_instances : int = 2
+        n_instances : int
             How many instances to create. Only passed to the routine which creates clients
 
         Returns
@@ -74,23 +79,20 @@ class EC2Manager:
                 UserData=startup_script,
                 **ec2_config['clients']
             )
-            # assure the last created instance is running and fully initialized before moving to the next steps
-            waiter = self.client.get_waiter('instance_status_ok')
-            waiter.wait(
-                Filters=[
-                    {
-                        'Name': 'instance-status.reachability',
-                        'Values': ['passed']
-                    },
-                ],
-                InstanceIds=[i.instance_id for i in instance]
-            )
+            logger.info('Sent request to create Client instance. Waiting for startup...')
+            # assure the last created instance is running
+            # waiting for full initialization is not necessary
+            instance[-1].wait_until_running()
+            logger.info('Successfully created Client instance')
         elif instance_type=='server':
             instance = self.resource.create_instances(
+                MinCount=n_instances,
+                MaxCount=n_instances,
                 KeyName=self.__key_pair,
                 UserData=startup_script,
                 **ec2_config['server']
             )
+            logger.info('Sent request to create Server instance. Waiting for initialization...')
             # assure the last created instance is running and fully initialized before moving to the next steps
             waiter = self.client.get_waiter('instance_status_ok')
             waiter.wait(
@@ -102,6 +104,7 @@ class EC2Manager:
                 ],
                 InstanceIds=[i.instance_id for i in instance]
             )
+            logger.info('Successfully created Server instance')
         
         return instance
     
@@ -199,45 +202,76 @@ class EC2Manager:
             Description=description
         )
         return response
-
-
-class EC2Instance(EC2Manager):
-    '''
-    Class for accessing and performing actions on indivdual ec2 instance
-    '''
-    def __init__(self, instance_id: str, aws_access_key: str, aws_secret_access_key: str, aws_region: Literal['us-east-1', 'us-west-2'], key_pair: str) -> None:
-        '''
-        instance_id : str
-            ID of the instance to manage
-        '''
-        super().__init__(aws_access_key, aws_secret_access_key, aws_region, key_pair)
-        self.instance_id = instance_id
-
     
-    # def assign_security_group(self) -> None:
-    #     '''
-    #     Create and assign security group with opened 8080 port rule to instance
-    #     '''
-    #     # Get the current security group IDs associated with the instance
-    #     response = self.resource.describe_instances(InstanceIds=[self.instance_id])
-    #     current_security_group_ids = response['Reservations'][0]['Instances'][0]['SecurityGroups']
 
-    #     # Extract the existing security group IDs
-    #     existing_security_group_ids = [sg['GroupId'] for sg in current_security_group_ids]
+    def create_s3_bucket(self, bucket_name: str = 'houseware-images-federated-learning-simulation-log') -> dict:
+        '''
+        Create s3 bucket to store logs from Flower Federated Learning simultations
+
+        Parameters
+        ----------
+
+        bucket_name : str = 'houseware-images-federated-learning-simulation-log'
+            Name of the bucket where logs will be stored
         
-    #     # create security group
-    #     sg_response = self.__create_security_group()
-    #     # get its ID
-    #     security_group_id_to_add = sg_response['GroupId']
-    #     # open the 8080 port
-    #     _ = self.__open_port(security_group_id=security_group_id_to_add)
+        Returns
+        -------
 
-    #     # Add the new security group ID to the list if it's not already present
-    #     if security_group_id_to_add not in existing_security_group_ids:
-    #         existing_security_group_ids.append(security_group_id_to_add)
+        Operation response in a JSON format
+        '''
+        logger.info(f"Checking if the bucket '{bucket_name}' already exists...")
+        try:
+            self.client.head_bucket(Bucket=bucket_name)
+            return {'warning': f"Bucket '{bucket_name}' already exists. Skipping action"}
+        except ClientError as e:
+            logger.info('Bucket does not exist. Creating...')
+            if e.response['Error']['Code'] == '404':
+                try:
+                    response = self.client.create_bucket(
+                        Bucket=bucket_name,
+                        CreateBucketConfiguration={
+                            'LocationConstraint': self.__region
+                        }
+                    )
+                    return response
+                except Exception as create_error:
+                    return {'Error creating bucket': create_error}
+            else:
+                return {'Error checking bucket existence': e}
+            
+    
+    def write_to_s3_bucket(self, log_file: str, object_key: str, bucket_name: str = 'houseware-images-federated-learning-simulation-log') -> dict:
+        '''
+        Write Flower Federated Learning simulation log file to the bucket
 
-    #     # Modify the instance to include the updated security group IDs
-    #     self.resource.modify_instance_attribute(
-    #         InstanceId=self.instance_id,
-    #         Groups=existing_security_group_ids
-    #     )
+        Parameters
+        ----------
+        log_file : str
+            Name of the file with log
+
+        object_key : str
+            Path to create for the log file inside the bucket \n
+            Follow naming convention in such way that it is evident with which parameters the simulation was launched
+
+        bucket_name : str = 'houseware-images-federated-learning-simulation-log'
+            Name of the bucket where logs will be stored
+        
+        Returns
+        -------
+
+        Operation response in a JSON format
+        '''
+        try:
+            # Put the object (file) in the S3 bucket
+            with open(log_file, 'r') as f:
+                log = f.read()
+            log_binary = ' '.join(format(ch, 'b') for ch in bytearray(log))
+            response = self.client.put_object(
+                Bucket=bucket_name,
+                Key=object_key,
+                Body=log_binary
+            )
+            logger.info('Sent request to write the log to the bucket. Waiting until the log appears in bucket...')
+            return response
+        except Exception as e:
+            return {'Error writing object to S3': e}

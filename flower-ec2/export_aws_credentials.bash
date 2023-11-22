@@ -60,11 +60,11 @@ echo "[default]" > "$CONFIG_PATH/$CONFIG_FILE"
 echo "region=$AWS_REGION" >> "$CONFIG_PATH/$CONFIG_FILE"
 
 echo "AWS region added successfully to $CONFIG_PATH/$CONFIG_FILE"
-
+PEM_KEY_PATH="aws_management"
 # Having AWS configuration being set-up, generate .pem file (only if does not exist)
-if [ ! -f "$CREDENTIALS_PATH/$CREDENTIALS_FILE" ]; then
+if [ ! -f "$PEM_KEY_PATH/$CREDENTIALS_FILE" ]; then
     cd "$(pwd)"
     aws configure list
-    aws ec2 create-key-pair --key-name FlowerKey --query 'KeyMaterial' --output text > ./flower-main/ec2_management/$AWS_KEY_PAIR
-    chmod 400 ./flower-main/ec2_management/$AWS_KEY_PAIR
+    aws ec2 create-key-pair --key-name FlowerKey --query 'KeyMaterial' --output text > ./flower-ec2/aws_management/$AWS_KEY_PAIR.pem
+    chmod 400 ./flower-ec2/aws_management/$AWS_KEY_PAIR.pem
 fi
