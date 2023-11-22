@@ -13,4 +13,4 @@ cd flower-ec2/flower-dependencies/client
 while read -r package; do
     pip install "$package"
 done < requirements.txt
-python3 client.py --public_ip $PUBLIC_IP
+python3 run_client.py --public_ip=$PUBLIC_IP --data_n=2 --data_index=0
