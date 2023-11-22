@@ -1,11 +1,4 @@
-import os, flwr as fl, numpy as np
-from dotenv import load_dotenv
-
-load_dotenv()
-HGF_TOKEN = os.environ['HUGGINGFACE_TOKEN']
-HGF_DATA_REPO = os.environ['HUGGINGFACE_DATASET_V2_REPO']
-HGF_TOPIC_MODEL_TOP2VEC_REPO = os.environ['HUGGINGFACE_TOPIC_MODEL_TOP2VEC_REPO']
-HGF_TOPIC_MODEL_TOP2VEC_FILE = os.environ['HUGGINGFACE_TOPIC_MODEL_TOP2VEC_FILE']
+import flwr as fl, numpy as np
 
 class UniversalClient(fl.client.NumPyClient):
     def __init__(self, model, train_dataset, test_dataset, epochs=1, batch_size=32):
