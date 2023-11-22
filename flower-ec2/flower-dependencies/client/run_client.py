@@ -29,10 +29,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run Flower client with subset of data')
     parser.add_argument('--data_index', type=int, help='Index of data subset to use', required=True)
     parser.add_argument('--data_n', type=int, help='Number of Clients', required=True)
+    parser.add_argument('--public_ip', type=int, help='Public IP address of the Server instance', required=True)
 
     args = parser.parse_args()
     data_index = args.data_index
     data_n = args.data_n
+    server_public_ip = args.public_ip
 
     train, test = keras.utils.image_dataset_from_directory(
         DIR,
@@ -52,6 +54,6 @@ if __name__ == '__main__':
     client = UniversalClient(model, train, test)
 
     fl.client.start_numpy_client(
-        server_address='[::]:8080',
+        server_address=f'{server_public_ip}:8080',
         client=client
     )
