@@ -1,16 +1,16 @@
 #!/bin/bash
 set -x
-export PUBLIC_IP=3.83.41.200
+export PUBLIC_IP=EC2_PUBLIC_IP
 sudo yum -y install python3-pip
 sudo yum -y install git
 cd /home/ec2-user
 git clone --depth 1 --filter=blob:none --no-checkout https://github.com/fedorTurchenko18/dsc-515.git
 cd dsc-515/
 git sparse-checkout init --cone
-git sparse-checkout set flower-ec2/flower-dependencies/client
+git sparse-checkout set flower-ec2/flower-dependencies/client flower-ec2/flower-dependencies/model.py images_houseware
 git checkout
 cd flower-ec2/flower-dependencies/client
 while read -r package; do
     pip install "$package"
 done < requirements.txt
-python3 run_client.py --public_ip=$PUBLIC_IP --data_n=2 --data_index=0
+python3 run_client.py --public_ip=$PUBLIC_IP --data_n=DATA_N --data_index=DATA_INDEX

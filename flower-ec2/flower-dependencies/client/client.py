@@ -1,4 +1,4 @@
-import sys, os, flwr as fl, numpy as np
+import os, flwr as fl, numpy as np
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,11 +14,6 @@ class UniversalClient(fl.client.NumPyClient):
         self.test_dataset = test_dataset
         self.epochs = epochs
         self.batch_size = batch_size
-        # self.model.compile(
-        #     optimizer=OPTIMIZER,
-        #     loss=LOSS,
-        #     metrics=METRICS
-        # )
 
 
     def get_parameters(self, config):
