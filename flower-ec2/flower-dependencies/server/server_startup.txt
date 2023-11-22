@@ -10,6 +10,6 @@ git sparse-checkout set flower-ec2/flower-dependencies/server flower-ec2/flower-
 git checkout
 cd flower-ec2/flower-dependencies/server
 while read -r package; do
-    pip install "$package"
+    pip install "$package" --no-cache-dir -q
 done < requirements.txt
 python3 run_server.py --data_n={DATA_N}
