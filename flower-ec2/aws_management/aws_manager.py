@@ -1,9 +1,10 @@
-import boto3, yaml
+import boto3, yaml, os, datetime
 from botocore.exceptions import ClientError
-from typing import Literal, List
-from loguru import logger
+from typing import Literal, List, Dict, Union
 
-with open('aws_management/ec2_config.yaml', 'rb') as f:
+ec2_config_path = os.path.abspath(__file__)
+ec2_config_path = ec2_config_path[:ec2_config_path.rindex('/')]
+with open(f'{ec2_config_path}/ec2_config.yaml', 'rb') as f:
     ec2_config = yaml.safe_load(f)
 
 
@@ -11,13 +12,21 @@ class AWSManager:
     '''
     Class for managing of ec2 instances
     '''
-    def __init__(self, service: Literal['ec2', 's3'], aws_access_key: str, aws_secret_access_key: str, aws_session_token: str, aws_region: Literal['us-east-1', 'us-west-2'], aws_key_pair: str) -> None:
+    def __init__(
+            self,
+            service: Literal['ec2', 's3', 'cloudwatch'],
+            aws_access_key: str,
+            aws_secret_access_key: str,
+            aws_session_token: str,
+            aws_region: Literal['us-east-1', 'us-west-2'],
+            aws_key_pair: str
+    ) -> None:
         '''
         Parameters
         ----------
 
-        service : Literal['ec2', 's3']
-            For which service 
+        service : Literal['ec2', 's3', 'cloudwatch']
+            Service to create client and resource for
 
         aws_access_key : str
             Access key from AWS credentials
@@ -32,7 +41,6 @@ class AWSManager:
             AWS .pem file name
         '''
         self.__key_pair = aws_key_pair
-        self.__region = aws_region
         self.resource = boto3.resource(
             service,
             aws_access_key_id=aws_access_key,
@@ -79,11 +87,9 @@ class AWSManager:
                 UserData=startup_script,
                 **ec2_config['clients']
             )
-            logger.info('Sent request to create Client instance. Waiting for startup...')
             # assure the last created instance is running
             # waiting for full initialization is not necessary
             instance[-1].wait_until_running()
-            logger.info('Successfully created Client instance')
         elif instance_type=='server':
             instance = self.resource.create_instances(
                 MinCount=n_instances,
@@ -92,7 +98,6 @@ class AWSManager:
                 UserData=startup_script,
                 **ec2_config['server']
             )
-            logger.info('Sent request to create Server instance. Waiting for initialization...')
             # assure the last created instance is running and fully initialized before moving to the next steps
             waiter = self.client.get_waiter('instance_status_ok')
             waiter.wait(
@@ -104,7 +109,6 @@ class AWSManager:
                 ],
                 InstanceIds=[i.instance_id for i in instance]
             )
-            logger.info('Successfully created Server instance')
         
         return instance
     
@@ -219,19 +223,14 @@ class AWSManager:
 
         Operation response in a JSON format
         '''
-        logger.info(f"Checking if the bucket '{bucket_name}' already exists...")
         try:
             self.client.head_bucket(Bucket=bucket_name)
             return {'warning': f"Bucket '{bucket_name}' already exists. Skipping action"}
         except ClientError as e:
-            logger.info('Bucket does not exist. Creating...')
             if e.response['Error']['Code'] == '404':
                 try:
                     response = self.client.create_bucket(
-                        Bucket=bucket_name,
-                        CreateBucketConfiguration={
-                            'LocationConstraint': self.__region
-                        }
+                        Bucket=bucket_name
                     )
                     return response
                 except Exception as create_error:
@@ -265,13 +264,77 @@ class AWSManager:
             # Put the object (file) in the S3 bucket
             with open(log_file, 'r') as f:
                 log = f.read()
-            log_binary = ' '.join(format(ch, 'b') for ch in bytearray(log))
+            log_binary = str.encode(log)
             response = self.client.put_object(
                 Bucket=bucket_name,
                 Key=object_key,
                 Body=log_binary
             )
-            logger.info('Sent request to write the log to the bucket. Waiting until the log appears in bucket...')
             return response
         except Exception as e:
             return {'Error writing object to S3': e}
+        
+    
+    def get_metric_statistic_cloudwatch(
+            self, instance_id: str, start_time: datetime.datetime, end_time: datetime.datetime,
+            metric_name: str = 'CPUUtilization', namespace: str = 'AWS/EC2', period: int = 10, stats: List[str]=['Average']
+    ) -> Dict[
+        Literal['timestamp', 'cpu_utilization', 'error'],
+        Union[Literal['cpu utilization estimation failed'], datetime.datetime, float]
+    ]:
+        '''
+        Measure ec2 instance metric \n
+        Default usage is measuring CPU usage at Flower Client during `fit()` and `evaluate()` operations. 
+        It is calculated by averaging 10-seconds long windows by default
+
+        Parameters
+        ----------
+
+        instance_id : str
+            ID of ec2 instance to measure on
+        
+        start_time : datime.datetime
+            Starting point to measure from
+
+        end_time : datetime.datetime
+            When to finish measuring
+
+        metric_name : str
+            The name of the metric, with or without spaces
+
+        namespace : str
+            The namespace of the metric, with or without spaces
+
+        period : int
+            The granularity, in seconds, of the returned data points
+
+        statistic : List[str]
+            The metric statistics
+
+        Returns
+        -------
+
+        Dict of either CPU usage along with timestamp or error message
+        '''
+        response = self.client.get_metric_statistics(
+            Namespace=namespace,
+            MetricName=metric_name,
+            Dimensions=[
+                {
+                    'Name': 'InstanceId',
+                    'Value': instance_id
+                }
+            ],
+            StartTime=start_time,
+            EndTime=end_time,
+            Period=period,
+            Statistics=stats
+        )
+        try:
+            cpu_usage = {'timestamp': [], 'cpu_utilization': []}
+            for datapoint in response['Datapoints']:
+                cpu_usage['timestamp'].append(datapoint['Timestamp'])
+                cpu_usage['cpu_utilization'].append(datapoint['Average'])
+            return cpu_usage
+        except KeyError:
+            return {'error': 'cpu utilization estimation failed'}

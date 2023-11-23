@@ -6,10 +6,10 @@ class ServerStrategy:
     def __init__(
             self,
             fl_strategy: Literal[
-                'fl.server.strategy.FedAvg',
-                'fl.server.strategy.FedAvgM',
-                'fl.server.strategy.FedAdaGrad',
-                'fl.server.strategy.FedAdam'
+                'FedAvg',
+                'FedAvgM',
+                'FedAdaGrad',
+                'FedAdam'
             ],
             min_available_clients: int,
             min_fit_clients: int,
@@ -27,7 +27,7 @@ class ServerStrategy:
         Parameters
         ----------
 
-        fl_strategy : Literal['fl.server.strategy.FedAvg', 'fl.server.strategy.FedAvgM', 'fl.server.strategy.FedAdaGrad', 'fl.server.strategy.FedAdam']
+        fl_strategy : Literal['FedAvg', 'FedAvgM', 'FedAdaGrad', 'FedAdam']
             One of such flower server strategies as `FedAvg`, `FedAvgM`, `FedAdaGrad`, `FedAdam` \n
             Other ones are possible but out of the scope of simulation interest
 

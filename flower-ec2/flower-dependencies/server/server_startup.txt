@@ -1,15 +1,20 @@
 #!/bin/bash
 set -x
+export AWS_ACCESS_KEY=ACCESS_KEY
+export AWS_SECRET_ACCESS_KEY=SECRET_ACCESS_KEY
+export AWS_SESSION_TOKEN=SESSION_TOKEN
+export AWS_REGION=REGION
+export AWS_KEY_PAIR=KEY_PAIR
 sudo yum -y install python3-pip
 sudo yum -y install git
 cd /home/ec2-user
 git clone --depth 1 --filter=blob:none --no-checkout https://github.com/fedorTurchenko18/dsc-515.git
 cd dsc-515/
 git sparse-checkout init --cone
-git sparse-checkout set flower-ec2/flower-dependencies/server flower-ec2/flower-dependencies/model.py images_houseware
+git sparse-checkout set flower-ec2/flower-dependencies/server flower-ec2/flower-dependencies/model.py flower-ec2/aws_management images_houseware
 git checkout
 cd flower-ec2/flower-dependencies/server
 while read -r package; do
     pip install "$package" --no-cache-dir -q
 done < requirements.txt
-python3 run_server.py --data_n=DATA_N
+python3 run_server.py --num_rounds=NUM_ROUNDS --data_n=DATA_N --strategy=STRATEGY --backend=BACKEND

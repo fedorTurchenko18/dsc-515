@@ -4,7 +4,10 @@ from strategy import ServerStrategy
 curdir = os.path.dirname(__file__)
 sys.path.append(os.path.join(curdir, '..'))
 from model import KerasCoreCNN
-
+sys.path.append(os.path.join(curdir, '../../'))
+from aws_management.aws_manager import AWSManager
+from dotenv import load_dotenv
+load_dotenv()
 
 if __name__=='__main__':
     cur_abs_path = os.path.abspath('.')
@@ -15,11 +18,43 @@ if __name__=='__main__':
     SUBSET = 'both'
     BATCH_SIZE = 32
 
-    parser = argparse.ArgumentParser(description='Run Flower client with subset of data')
-    parser.add_argument('--data_n', type=int, help='Number of Clients', required=True)
+    AWS_ACCESS_KEY = os.environ['AWS_LAB_ACCESS_KEY']
+    AWS_SECRET_ACCESS_KEY = os.environ['AWS_LAB_SECRET_ACCESS_KEY']
+    AWS_SESSION_TOKEN = os.environ['AWS_LAB_SESSION_TOKEN']
+    AWS_REGION = os.environ['AWS_REGION']
+    AWS_KEY_PAIR = os.environ['AWS_KEY_PAIR']
+
+    # create s3 bucket for Flower logs storage
+    s3_manager = AWSManager(
+        service='s3',
+        aws_access_key=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        aws_session_token=AWS_SESSION_TOKEN,
+        aws_region=AWS_REGION,
+        aws_key_pair=AWS_KEY_PAIR
+    )
+    s3_create_bucket_response = s3_manager.create_s3_bucket()
+
+    parser = argparse.ArgumentParser(description='Run Flower Server')
+    parser.add_argument('--num_rounds', type=int, help='Number of Federated Learning rounds to run', required=True)
+    parser.add_argument('--data_n', type=int, help='Number of Clients to wait for', required=True)
+    parser.add_argument('--strategy', type=str, help='Strategy to initialize Flower Server with. Available: "FedAvg", "FedAvgM", "FedAdaGrad", "FedAdam"', required=True)
+    parser.add_argument('--backend', type=str, help='Backend of Flower Client (needed here to compose the log file path on s3). Available: "jax", "torch", "tensorflow"', required=True)
 
     args = parser.parse_args()
     data_n = args.data_n
+    strategy_str = args.strategy
+    backend = args.backend
+    num_rounds = args.num_rounds
+
+    strategy_mapping = {
+        'FedAvg': fl.server.strategy.FedAvg,
+        'FedAvgM': fl.server.strategy.FedAvgM,
+        'FedAdaGrad': fl.server.strategy.FedAdagrad,
+        'FedAdam': fl.server.strategy.FedAdam
+    }
+
+    strategy = strategy_mapping[strategy_str]
 
     _, test = keras.utils.image_dataset_from_directory(
         DIR,
@@ -43,16 +78,23 @@ if __name__=='__main__':
         return loss, {'accuracy': float(accuracy)}
     
     strat_wrapper = ServerStrategy(
-        fl_strategy=fl.server.strategy.FedAvg,
+        fl_strategy=strategy,
         min_available_clients=data_n,
         min_fit_clients=data_n,
         min_evaluate_clients=data_n,
         evaluate_fn=evaluate,
         initial_parameters=initial_parameters
     )
-    
+    log_dir = os.path.abspath(__file__)
+    log_dir = log_dir[:log_dir.rindex('/')]
+    log_file = f'{log_dir}/server_log.txt'
+    fl.common.logger.configure(identifier='myFlowerExperiment', filename=log_file)
+
     fl.server.start_server(
         server_address='0.0.0.0:8080',
         strategy=strat_wrapper.strategy,
-        config=fl.server.ServerConfig(num_rounds=3)
-    ) 
+        config=fl.server.ServerConfig(num_rounds=num_rounds)
+    )
+
+    # save FL log to s3
+    write_to_s3_bucket_response = s3_manager.write_to_s3_bucket(log_file=log_file, object_key=f'{backend}/{strategy_str}/server_log.txt')
