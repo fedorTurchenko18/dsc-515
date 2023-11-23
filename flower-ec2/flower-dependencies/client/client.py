@@ -5,7 +5,7 @@ curdir = os.path.dirname(__file__)
 sys.path.append(os.path.join(curdir, '../../'))
 from aws_management.aws_manager import AWSManager
 from datetime import datetime
-from typing import Literal
+from typing import Literal, List
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -28,10 +28,10 @@ class UniversalClient(fl.client.NumPyClient):
     def __init__(
             self,
             model: Literal['keras_core.src.models.functional.Functional'],
-            train_dataset: Literal['tf.data.Dataset'],
-            test_dataset: Literal['tf.data.Dataset'],
+            train_dataset: List[Literal['tf.data.Dataset']],
+            test_dataset: List[Literal['tf.data.Dataset']],
             instance_id: str,
-            epochs=1, batch_size=32, cloudwatch_manager=cloudwatch_manager
+            epochs=1, batch_size=32, cloudwatch_manager: AWSManager = cloudwatch_manager
     ):
         '''
         Initialize universal Flower client. 
@@ -48,7 +48,21 @@ class UniversalClient(fl.client.NumPyClient):
             Train data created using `keras_core.datasets.image_dataset_from_directory`
 
         test_dataset : Literal['tf.data.Dataset']
-            Train data created using `keras_core.datasets.image_dataset_from_directory`
+            Test data created using `keras_core.datasets.image_dataset_from_directory`
+
+        instance_id : str
+            ID of the Flower Client instance on which this client will be running \n
+            Needed for CPU usage monitoring during `fit()` and `evaluate()`
+
+        epochs : int
+            How many epochs to train model for
+
+        batch_size : int
+            Batch size for model training
+
+        cloudwatch_manager : AWSManager
+            Custom class `AWSManager` initialized with `service='cloudwatch'` argument \n
+            Needed for CPU usage monitoring during `fit()` and `evaluate()`
         '''
         self.model = model
         self.train_dataset = train_dataset
@@ -61,26 +75,42 @@ class UniversalClient(fl.client.NumPyClient):
 
     def get_parameters(self, config):
         '''
-        "This method just needs to exist", - official video from docs
+        Implementation of this method follows official Flower documentation
         '''
         return [np.asarray(v) for v in self.model.get_weights()]
 
 
     def fit(self, parameters, config):
-        start_time = datetime.utcnow()
+        '''
+        Implementation of this method follows official Flower documentation \n
+        CPU usage monitoring is the only custom implemented functionality
+        '''
         self.model.set_weights(parameters)
+        # start point of CPU usage monitoring
+        start_time = datetime.utcnow()
         self.model.fit(self.train_dataset)
+        # end point of CPU usage monitoring
         end_time = datetime.utcnow()
+        # measure CPU usage monitoring
         cpu_usage = self.cloudwatch_manager.get_metric_statistic_cloudwatch(instance_id=self.instance_id, start_time=start_time, end_time=end_time)
+        # log CPU usage monitoring
         log(INFO, f'Instance {self.instance_id} : CPU usage history during fit() : {cpu_usage}')
         return [np.asarray(v) for v in self.model.get_weights()], sum([len(i[1]) for i in self.train_dataset.as_numpy_iterator()]), {}
 
 
     def evaluate(self, parameters, config):
+        '''
+        Implementation of this method follows official Flower documentation \n
+        CPU usage monitoring is the only custom implemented functionality
+        '''
         self.model.set_weights(parameters)
-        loss, accuracy = self.model.evaluate(self.test_dataset)
+        # start point of CPU usage monitoring
         start_time = datetime.utcnow()
+        loss, accuracy = self.model.evaluate(self.test_dataset)
+        # end point of CPU usage monitoring
         end_time = datetime.utcnow()
+        # measure CPU usage monitoring
         cpu_usage = self.cloudwatch_manager.get_metric_statistic_cloudwatch(instance_id=self.instance_id, start_time=start_time, end_time=end_time)
+        # log CPU usage monitoring
         log(INFO, f'Instance {self.instance_id} : CPU usage history during evaluate() : {cpu_usage}')
         return loss, sum([len(i[1]) for i in self.train_dataset.as_numpy_iterator()]), {'accuracy': float(accuracy)}

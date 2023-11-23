@@ -2,12 +2,11 @@
 set -x
 INSTANCE_ID = ec2-metadata -i
 INSTANCE_ID = $(echo $INSTANCE_ID | cut -d' ' -f2-)
-export AWS_LAB_ACCESS_KEY=ACCESS_KEY
-export AWS_LAB_SECRET_ACCESS_KEY=SECRET_ACCESS_KEY
-export AWS_LAB_SESSION_TOKEN=SESSION_TOKEN
-export AWS_REGION=REGION
-export AWS_KEY_PAIR=KEY_PAIR
-source ~/.bashrc
+echo export AWS_LAB_ACCESS_KEY=PASSED_ACCESS_KEY | sudo tee -a /etc/profile
+echo export AWS_LAB_SECRET_ACCESS_KEY=PASSED_SECRET_ACCESS_KEY | sudo tee -a /etc/profile
+echo export AWS_LAB_SESSION_TOKEN=PASSED_SESSION_TOKEN | sudo tee -a /etc/profile
+echo export AWS_REGION=PASSED_REGION | sudo tee -a /etc/profile
+echo export AWS_KEY_PAIR=PASSED_KEY_PAIR | sudo tee -a /etc/profile
 sudo yum -y install python3-pip
 sudo yum -y install git
 cd /home/ec2-user

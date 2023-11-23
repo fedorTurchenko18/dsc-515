@@ -45,11 +45,11 @@ if __name__=='__main__':
         'DATA_N': str(N_CLIENT_INSTANCES),
         'STRATEGY': STRATEGY,
         'BACKEND': BACKEND,
-        'ACCESS_KEY': AWS_ACCESS_KEY,
-        'SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY,
-        'SESSION_TOKEN': AWS_SESSION_TOKEN,
-        'REGION': AWS_REGION,
-        'KEY_PAIR': AWS_KEY_PAIR
+        'PASSED_ACCESS_KEY': AWS_ACCESS_KEY,
+        'PASSED_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY,
+        'PASSED_SESSION_TOKEN': AWS_SESSION_TOKEN,
+        'PASSED_REGION': AWS_REGION,
+        'PASSED_KEY_PAIR': AWS_KEY_PAIR
     }.items():
         server_startup_script = server_startup_script.replace(to_replace, replacement)
 
@@ -67,11 +67,11 @@ if __name__=='__main__':
         'PUBLIC_IP': server_public_ip_address,
         'DATA_N': str(N_CLIENT_INSTANCES),
         'BACKEND': BACKEND,
-        'ACCESS_KEY': AWS_ACCESS_KEY,
-        'SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY,
-        'SESSION_TOKEN': AWS_SESSION_TOKEN,
-        'REGION': AWS_REGION,
-        'KEY_PAIR': AWS_KEY_PAIR
+        'PASSED_ACCESS_KEY': AWS_ACCESS_KEY,
+        'PASSED_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY,
+        'PASSED_SESSION_TOKEN': AWS_SESSION_TOKEN,
+        'PASSED_REGION': AWS_REGION,
+        'PASSED_KEY_PAIR': AWS_KEY_PAIR
     }.items():
         client_startup_script = client_startup_script.replace(to_replace, replacement)
 
