@@ -19,9 +19,9 @@ if __name__=='__main__':
     
     args = parser.parse_args()
     N_CLIENT_INSTANCES = args.n_client_instances
-    NUM_ROUNDS = args.n_client_instances
-    STRATEGY = args.n_client_instances
-    BACKEND = args.n_client_instances
+    NUM_ROUNDS = args.num_rounds
+    STRATEGY = args.strategy
+    BACKEND = args.backend
 
     ec2_manager = AWSManager(
         service='ec2',

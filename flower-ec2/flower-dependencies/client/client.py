@@ -25,6 +25,17 @@ cloudwatch_manager = AWSManager(
 
 class UniversalClient(fl.client.NumPyClient):
     def __init__(self, model, train_dataset, test_dataset, instance_id, epochs=1, batch_size=32, cloudwatch_manager=cloudwatch_manager):
+        '''
+        Initialize universal Flower client. 
+        Universal means that it is based on `keras_core` library methods only
+        which allow it to run on different backends, namely JAX/Tensorflow/Pytorch
+
+        Parameters
+        ----------
+
+        model
+            Compiled keras_core model
+        '''
         self.model = model
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
