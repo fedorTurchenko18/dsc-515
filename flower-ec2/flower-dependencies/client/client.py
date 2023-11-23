@@ -6,8 +6,6 @@ sys.path.append(os.path.join(curdir, '../../'))
 from aws_management.aws_manager import AWSManager
 from datetime import datetime
 from typing import Literal, List
-from dotenv import load_dotenv
-load_dotenv()
 
 AWS_ACCESS_KEY = os.environ['AWS_LAB_ACCESS_KEY']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_LAB_SECRET_ACCESS_KEY']
