@@ -7,6 +7,7 @@ echo export AWS_LAB_SECRET_ACCESS_KEY=PASSED_SECRET_ACCESS_KEY  >> ~/.bash_profi
 echo export AWS_LAB_SESSION_TOKEN=PASSED_SESSION_TOKEN >> ~/.bash_profile
 echo export AWS_REGION=PASSED_REGION >> ~/.bash_profile
 echo export AWS_KEY_PAIR=PASSED_KEY_PAIR >> ~/.bash_profile
+source ~/.bash_profile
 sudo yum -y install python3-pip
 sudo yum -y install git
 cd /home/ec2-user
