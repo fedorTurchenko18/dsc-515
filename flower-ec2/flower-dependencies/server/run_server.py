@@ -9,6 +9,7 @@ from aws_management.aws_manager import AWSManager
 from dotenv import load_dotenv
 load_dotenv()
 
+print(os.environ)
 if __name__=='__main__':
     cur_abs_path = os.path.abspath('.')
     DIR = f"{cur_abs_path[:cur_abs_path.find('dsc-515')+len('dsc-515')]}/images_houseware"
