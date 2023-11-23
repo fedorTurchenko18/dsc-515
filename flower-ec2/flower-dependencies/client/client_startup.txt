@@ -7,7 +7,7 @@ export AWS_LAB_SECRET_ACCESS_KEY=SECRET_ACCESS_KEY
 export AWS_LAB_SESSION_TOKEN=SESSION_TOKEN
 export AWS_REGION=REGION
 export AWS_KEY_PAIR=KEY_PAIR
-export PUBLIC_IP=EC2_PUBLIC_IP
+source ~/.bashrc
 sudo yum -y install python3-pip
 sudo yum -y install git
 cd /home/ec2-user
@@ -20,4 +20,4 @@ cd flower-ec2/flower-dependencies/client
 while read -r package; do
     pip install "$package" --no-cache-dir -q
 done < requirements.txt
-python3 run_client.py --backend=BACKEND --public_ip=$PUBLIC_IP --data_n=DATA_N --data_index=DATA_INDEX --instance_id=INSTANCE_ID
+python3 run_client.py --backend=BACKEND --public_ip=PUBLIC_IP --data_n=DATA_N --data_index=DATA_INDEX --instance_id=INSTANCE_ID

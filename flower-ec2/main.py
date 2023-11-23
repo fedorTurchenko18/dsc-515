@@ -64,7 +64,7 @@ if __name__=='__main__':
         client_startup_script = f.read()
 
     for to_replace, replacement in {
-        'EC2_PUBLIC_IP': server_public_ip_address,
+        'PUBLIC_IP': server_public_ip_address,
         'DATA_N': str(N_CLIENT_INSTANCES),
         'BACKEND': BACKEND,
         'ACCESS_KEY': AWS_ACCESS_KEY,

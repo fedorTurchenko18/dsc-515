@@ -5,6 +5,7 @@ export AWS_LAB_SECRET_ACCESS_KEY=SECRET_ACCESS_KEY
 export AWS_LAB_SESSION_TOKEN=SESSION_TOKEN
 export AWS_REGION=REGION
 export AWS_KEY_PAIR=KEY_PAIR
+source ~/.bashrc
 sudo yum -y install python3-pip
 sudo yum -y install git
 cd /home/ec2-user

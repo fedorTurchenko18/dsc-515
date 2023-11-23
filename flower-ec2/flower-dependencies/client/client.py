@@ -5,6 +5,7 @@ curdir = os.path.dirname(__file__)
 sys.path.append(os.path.join(curdir, '../../'))
 from aws_management.aws_manager import AWSManager
 from datetime import datetime
+from typing import Literal
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -24,7 +25,14 @@ cloudwatch_manager = AWSManager(
 )
 
 class UniversalClient(fl.client.NumPyClient):
-    def __init__(self, model, train_dataset, test_dataset, instance_id, epochs=1, batch_size=32, cloudwatch_manager=cloudwatch_manager):
+    def __init__(
+            self,
+            model: Literal['keras_core.src.models.functional.Functional'],
+            train_dataset: Literal['tf.data.Dataset'],
+            test_dataset: Literal['tf.data.Dataset'],
+            instance_id: str,
+            epochs=1, batch_size=32, cloudwatch_manager=cloudwatch_manager
+    ):
         '''
         Initialize universal Flower client. 
         Universal means that it is based on `keras_core` library methods only
@@ -33,8 +41,14 @@ class UniversalClient(fl.client.NumPyClient):
         Parameters
         ----------
 
-        model
-            Compiled keras_core model
+        model : Literal['keras_core.src.models.functional.Functional']
+            Compiled `keras_core` Functional model
+
+        train_dataset : Literal['tf.data.Dataset']
+            Train data created using `keras_core.datasets.image_dataset_from_directory`
+
+        test_dataset : Literal['tf.data.Dataset']
+            Train data created using `keras_core.datasets.image_dataset_from_directory`
         '''
         self.model = model
         self.train_dataset = train_dataset
