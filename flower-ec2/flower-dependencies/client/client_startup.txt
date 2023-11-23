@@ -1,5 +1,7 @@
 #!/bin/bash
 set -x
+INSTANCE_ID = ec2-metadata -i
+INSTANCE_ID = $(echo $INSTANCE_ID | cut -d' ' -f2-)
 export AWS_ACCESS_KEY=ACCESS_KEY
 export AWS_SECRET_ACCESS_KEY=SECRET_ACCESS_KEY
 export AWS_SESSION_TOKEN=SESSION_TOKEN
@@ -18,4 +20,4 @@ cd flower-ec2/flower-dependencies/client
 while read -r package; do
     pip install "$package" --no-cache-dir -q
 done < requirements.txt
-python3 run_client.py --public_ip=$PUBLIC_IP --data_n=DATA_N --data_index=DATA_INDEX
+python3 run_client.py --backend=BACKEND --public_ip=$PUBLIC_IP --data_n=DATA_N --data_index=DATA_INDEX --instance_id=INSTANCE_ID
