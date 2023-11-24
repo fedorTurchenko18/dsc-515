@@ -20,4 +20,4 @@ cd flower-ec2/flower-dependencies/client
 while read -r package; do
     pip install "$package" --no-cache-dir -q
 done < requirements.txt
-python3 run_client.py --backend=BACKEND --public_ip=PUBLIC_IP --data_n=DATA_N --data_index=DATA_INDEX --instance_id=$INSTANCE_ID --strategy=STRATEGY
+python3 run_client.py --backend=BACKEND --public_ip=PUBLIC_IP --data_n=DATA_N --data_index=DATA_INDEX --instance_id=$INSTANCE_ID --strategy STRATEGY
