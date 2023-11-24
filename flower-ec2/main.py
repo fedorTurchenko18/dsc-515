@@ -94,8 +94,8 @@ if __name__=='__main__':
     client_local_log_path = f'{local_log_path}/client_log.txt'
     out_cond = False
     while out_cond == False:
-        fl_server_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=local_log_path, object_key=f'{BACKEND}/{STRATEGY}/server_log.txt')
-        fl_client_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=local_log_path, object_key=f'{BACKEND}/{STRATEGY}/client_log.txt')
+        fl_server_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=server_local_log_path, object_key=f'{BACKEND}/{STRATEGY}/server_log.txt')
+        fl_client_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=client_local_log_path, object_key=f'{BACKEND}/{STRATEGY}/client_log.txt')
         try:
             if 'error' in fl_server_log_download_response or 'error' in fl_client_log_download_response:
                 out_cond = False
