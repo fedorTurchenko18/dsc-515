@@ -91,29 +91,24 @@ if __name__ == '__main__':
         out_cond = False
         reconnect_attemps = 0
         while out_cond == False and reconnect_attemps < 5:
-            fl.common.logger.configure(identifier=f'{backend}-{strategy_str}-run', filename=log_file)
+            try:
+                # catch if the client has not connected to the server
+                # this is needed to make sure that when the server
+                # goes on another iteration of strategy
+                # client waits until its new startup
+                fl.common.logger.configure(identifier=f'{backend}-{strategy_str}-run', filename=log_file)
 
-            fl.client.start_numpy_client(
-                server_address=f'{server_public_ip}:8080',
-                client=client
-            )
-            # parse the log of execution in order to check
-            # if the client has connected to the server
-            # this is needed to make sure that when the server
-            # goes on another iteration of strategy
-            # client waits until its new startup
-            with open(log_file, 'r') as f:
-                log = f.readlines()
-            for line in log:
-                line_split = line.split(' | ')
-                if 'TRANSIENT_FAILURE' in line_split[-1]:
-                    # connection to the server has failed
-                    # rerun the loop
-                    out_cond = False
-                    reconnect_attemps += 1
-                    time.sleep(10)
-                else:
-                    out_cond = True
+                fl.client.start_numpy_client(
+                    server_address=f'{server_public_ip}:8080',
+                    client=client
+                )
+                out_cond = True
+            except:
+                # connection to the server has failed
+                # rerun the loop
+                out_cond = False
+                reconnect_attemps += 1
+                time.sleep(10)
 
         # save FL log to s3
         write_to_s3_bucket_response = s3_manager.write_to_s3_bucket(log_file=log_file, object_key=f'{backend}/{strategy_str}/client_log.log')
