@@ -16,7 +16,6 @@ if __name__=='__main__':
     SUBSET = 'both'
     BATCH_SIZE = 32
 
-    print(os.environ)
     AWS_ACCESS_KEY = os.environ['AWS_LAB_ACCESS_KEY']
     AWS_SECRET_ACCESS_KEY = os.environ['AWS_LAB_SECRET_ACCESS_KEY']
     AWS_SESSION_TOKEN = os.environ['AWS_LAB_SESSION_TOKEN']

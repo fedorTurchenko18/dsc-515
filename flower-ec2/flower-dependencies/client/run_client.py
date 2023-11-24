@@ -1,6 +1,15 @@
 import sys, os, argparse, flwr as fl
+curdir = os.path.dirname(__file__)
+sys.path.append(os.path.join(curdir, '../../'))
+from aws_management.aws_manager import AWSManager
 
 if __name__ == '__main__':
+
+    AWS_ACCESS_KEY = os.environ['AWS_LAB_ACCESS_KEY']
+    AWS_SECRET_ACCESS_KEY = os.environ['AWS_LAB_SECRET_ACCESS_KEY']
+    AWS_SESSION_TOKEN = os.environ['AWS_LAB_SESSION_TOKEN']
+    AWS_REGION = os.environ['AWS_REGION']
+    AWS_KEY_PAIR = os.environ['AWS_KEY_PAIR']
 
     cur_abs_path = os.path.abspath('.')
     DIR = f"{cur_abs_path[:cur_abs_path.find('dsc-515')+len('dsc-515')]}/images_houseware"
@@ -26,6 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_n', type=int, help='Number of Clients', required=True)
     parser.add_argument('--public_ip', type=str, help='Public IP address of the Server instance', required=True)
     parser.add_argument('--instance_id', type=str, help='ID of the Server instance (required for CPU usage measurement)', required=True)
+    parser.add_argument('--strategy', type=str, help='Strategy to initialize Flower Server with (needed here to compose the log file path on s3). Available: "FedAvg", "FedAvgM", "FedAdaGrad", "FedAdam"', required=True)
 
     args = parser.parse_args()
 
@@ -44,6 +54,7 @@ if __name__ == '__main__':
     data_n = args.data_n
     server_public_ip = args.public_ip
     instance_id = args.instance_id
+    strategy_str = args.strategy
 
     train, test = keras.utils.image_dataset_from_directory(
         DIR,
@@ -62,7 +73,24 @@ if __name__ == '__main__':
 
     client = UniversalClient(model, train, test, instance_id)
 
+    s3_manager = AWSManager(
+        service='s3',
+        aws_access_key=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        aws_session_token=AWS_SESSION_TOKEN,
+        aws_region=AWS_REGION,
+        aws_key_pair=AWS_KEY_PAIR
+    )
+    log_dir = os.path.abspath(__file__)
+    log_dir = log_dir[:log_dir.rindex('/')]
+    log_file = f'{log_dir}/client_log.txt'
+
+    fl.common.logger.configure(identifier='myFlowerExperiment', filename=log_file)
+
     fl.client.start_numpy_client(
         server_address=f'{server_public_ip}:8080',
         client=client
     )
+
+    # save FL log to s3
+    write_to_s3_bucket_response = s3_manager.write_to_s3_bucket(log_file=log_file, object_key=f'{backend}/{strategy_str}/client_log.txt')
