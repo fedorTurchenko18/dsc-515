@@ -10,7 +10,7 @@ with open(f'{ec2_config_path}/ec2_config.yaml', 'rb') as f:
 
 class AWSManager:
     '''
-    Class for managing of ec2 instances
+    Class for managing AWS services
     '''
     def __init__(
             self,
@@ -331,6 +331,14 @@ class AWSManager:
         Union[Literal['cpu utilization estimation failed'], datetime.datetime, float]
     ]:
         '''
+        WARNING: Deprecated Method
+        --------------------------
+
+        Cloudwatch delay does not allow for real-time metrics tracking. 
+        Deprecated in favor of `psutil`
+
+        ---
+
         Measure ec2 instance metric \n
         Default usage is measuring CPU usage at Flower Client during `fit()` and `evaluate()` operations. 
         It is calculated by averaging 10-seconds long windows by default

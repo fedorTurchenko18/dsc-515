@@ -6,6 +6,8 @@ sys.path.append(os.path.join(curdir, '..'))
 from model import KerasCoreCNN
 sys.path.append(os.path.join(curdir, '../../'))
 from aws_management.aws_manager import AWSManager
+from dotenv import load_dotenv
+load_dotenv()
 
 if __name__=='__main__':
     cur_abs_path = os.path.abspath('.')
@@ -36,23 +38,14 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Run Flower Server')
     parser.add_argument('--num_rounds', type=int, help='Number of Federated Learning rounds to run', required=True)
     parser.add_argument('--data_n', type=int, help='Number of Clients to wait for', required=True)
-    parser.add_argument('--strategy', type=str, help='Strategy to initialize Flower Server with. Available: "FedAvg", "FedAvgM", "FedAdaGrad", "FedAdam"', required=True)
+    parser.add_argument('--strategy', nargs='+', type=str, help='Strategy to initialize Flower Server with. Available: "FedAvg", "FedAvgM", "FedAdaGrad", "FedAdam"', required=True)
     parser.add_argument('--backend', type=str, help='Backend of Flower Client (needed here to compose the log file path on s3). Available: "jax", "torch", "tensorflow"', required=True)
 
     args = parser.parse_args()
     data_n = args.data_n
-    strategy_str = args.strategy
+    strategies = args.strategy
     backend = args.backend
     num_rounds = args.num_rounds
-
-    strategy_mapping = {
-        'FedAvg': fl.server.strategy.FedAvg,
-        'FedAvgM': fl.server.strategy.FedAvgM,
-        'FedAdaGrad': fl.server.strategy.FedAdagrad,
-        'FedAdam': fl.server.strategy.FedAdam
-    }
-
-    strategy = strategy_mapping[strategy_str]
 
     _, test = keras.utils.image_dataset_from_directory(
         DIR,
@@ -75,24 +68,35 @@ if __name__=='__main__':
         loss, accuracy = model.evaluate(test_dataset)
         return loss, {'accuracy': float(accuracy)}
     
-    strat_wrapper = ServerStrategy(
-        fl_strategy=strategy,
-        min_available_clients=data_n,
-        min_fit_clients=data_n,
-        min_evaluate_clients=data_n,
-        evaluate_fn=evaluate,
-        initial_parameters=initial_parameters
-    )
-    log_dir = os.path.abspath(__file__)
-    log_dir = log_dir[:log_dir.rindex('/')]
-    log_file = f'{log_dir}/server_log.txt'
-    fl.common.logger.configure(identifier=f'{backend}-{strategy_str}-run.txt', filename=log_file)
+    strategy_mapping = {
+        'FedAvg': fl.server.strategy.FedAvg,
+        'FedAvgM': fl.server.strategy.FedAvgM,
+        'FedAdaGrad': fl.server.strategy.FedAdagrad,
+        'FedAdam': fl.server.strategy.FedAdam
+    }
 
-    fl.server.start_server(
-        server_address='0.0.0.0:8080',
-        strategy=strat_wrapper.strategy,
-        config=fl.server.ServerConfig(num_rounds=num_rounds)
-    )
+    for strategy_str in strategies:
+        strategy = strategy_mapping[strategy_str]
+        strat_wrapper = ServerStrategy(
+            fl_strategy=strategy,
+            min_available_clients=data_n,
+            min_fit_clients=data_n,
+            min_evaluate_clients=data_n,
+            evaluate_fn=evaluate,
+            initial_parameters=initial_parameters
+        )
 
-    # save FL log to s3
-    write_to_s3_bucket_response = s3_manager.write_to_s3_bucket(log_file=log_file, object_key=f'{backend}/{strategy_str}/server_log.txt')
+        log_dir = os.path.abspath(__file__)
+        log_dir = log_dir[:log_dir.rindex('/')]
+        log_file = f'{log_dir}/server_log.log'
+        fl.common.logger.configure(identifier=f'{backend}-{strategy_str}-run', filename=log_file)
+
+        fl.server.start_server(
+            server_address='0.0.0.0:8080',
+            strategy=strat_wrapper.strategy,
+            config=fl.server.ServerConfig(num_rounds=num_rounds)
+        )
+        print('started server')
+
+        # save FL log to s3
+        write_to_s3_bucket_response = s3_manager.write_to_s3_bucket(log_file=log_file, object_key=f'{backend}/{strategy_str}/server_log.log')
