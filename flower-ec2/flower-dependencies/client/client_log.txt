@@ -1,0 +1,31 @@
+myFlowerExperiment | INFO flwr 2023-11-24 12:45:09,758 | grpc.py:49 | Opened insecure gRPC connection (no certificates were passed)
+myFlowerExperiment | DEBUG flwr 2023-11-24 12:45:09,760 | connection.py:42 | ChannelConnectivity.IDLE
+myFlowerExperiment | DEBUG flwr 2023-11-24 12:45:09,763 | connection.py:42 | ChannelConnectivity.CONNECTING
+myFlowerExperiment | DEBUG flwr 2023-11-24 12:45:09,765 | connection.py:42 | ChannelConnectivity.READY
+myFlowerExperiment | INFO flwr 2023-11-24 12:45:09,849 | grpc.py:49 | Opened insecure gRPC connection (no certificates were passed)
+myFlowerExperiment | DEBUG flwr 2023-11-24 12:45:09,855 | connection.py:42 | ChannelConnectivity.IDLE
+myFlowerExperiment | DEBUG flwr 2023-11-24 12:45:09,855 | connection.py:42 | ChannelConnectivity.READY
+myFlowerExperiment | INFO flwr 2023-11-24 12:45:47,143 | client.py:96 | Instance a : CPU usage history during fit() : {'timestamp': [], 'cpu_utilization': []}
+myFlowerExperiment | INFO flwr 2023-11-24 12:45:47,144 | client.py:96 | Instance a : CPU usage history during fit() : {'timestamp': [], 'cpu_utilization': []}
+myFlowerExperiment | INFO flwr 2023-11-24 12:45:58,301 | client.py:114 | Instance a : CPU usage history during evaluate() : {'timestamp': [], 'cpu_utilization': []}
+myFlowerExperiment | INFO flwr 2023-11-24 12:45:58,324 | client.py:114 | Instance a : CPU usage history during evaluate() : {'timestamp': [], 'cpu_utilization': []}
+myFlowerExperiment | DEBUG flwr 2023-11-24 12:45:58,706 | connection.py:139 | gRPC channel closed
+myFlowerExperiment | INFO flwr 2023-11-24 12:45:58,707 | app.py:215 | Disconnect and shut down
+myFlowerExperiment | DEBUG flwr 2023-11-24 12:45:58,707 | connection.py:139 | gRPC channel closed
+myFlowerExperiment | INFO flwr 2023-11-24 12:45:58,707 | app.py:215 | Disconnect and shut down
+myFlowerExperiment | INFO flwr 2023-11-24 13:13:23,670 | grpc.py:49 | Opened insecure gRPC connection (no certificates were passed)
+myFlowerExperiment | DEBUG flwr 2023-11-24 13:13:23,678 | connection.py:42 | ChannelConnectivity.IDLE
+myFlowerExperiment | DEBUG flwr 2023-11-24 13:13:23,679 | connection.py:42 | ChannelConnectivity.CONNECTING
+myFlowerExperiment | DEBUG flwr 2023-11-24 13:13:23,680 | connection.py:42 | ChannelConnectivity.READY
+myFlowerExperiment | INFO flwr 2023-11-24 13:13:25,386 | grpc.py:49 | Opened insecure gRPC connection (no certificates were passed)
+myFlowerExperiment | DEBUG flwr 2023-11-24 13:13:25,386 | connection.py:42 | ChannelConnectivity.IDLE
+myFlowerExperiment | DEBUG flwr 2023-11-24 13:13:25,390 | connection.py:42 | ChannelConnectivity.CONNECTING
+myFlowerExperiment | DEBUG flwr 2023-11-24 13:13:25,392 | connection.py:42 | ChannelConnectivity.READY
+myFlowerExperiment | INFO flwr 2023-11-24 13:14:05,351 | client.py:100 | Instance a : CPU usage history during fit() : {'timestamp': datetime.datetime(2023, 11, 24, 11, 14, 5, 350784), 'cpu_utilization': 72.8}
+myFlowerExperiment | INFO flwr 2023-11-24 13:14:05,634 | client.py:100 | Instance a : CPU usage history during fit() : {'timestamp': datetime.datetime(2023, 11, 24, 11, 14, 5, 634728), 'cpu_utilization': 72.9}
+myFlowerExperiment | INFO flwr 2023-11-24 13:14:17,533 | client.py:118 | Instance a : CPU usage history during evaluate() : {'timestamp': [], 'cpu_utilization': []}
+myFlowerExperiment | INFO flwr 2023-11-24 13:14:18,499 | client.py:118 | Instance a : CPU usage history during evaluate() : {'timestamp': [], 'cpu_utilization': []}
+myFlowerExperiment | DEBUG flwr 2023-11-24 13:14:18,764 | connection.py:139 | gRPC channel closed
+myFlowerExperiment | INFO flwr 2023-11-24 13:14:18,764 | app.py:215 | Disconnect and shut down
+myFlowerExperiment | DEBUG flwr 2023-11-24 13:14:18,767 | connection.py:139 | gRPC channel closed
+myFlowerExperiment | INFO flwr 2023-11-24 13:14:18,767 | app.py:215 | Disconnect and shut down

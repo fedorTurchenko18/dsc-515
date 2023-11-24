@@ -1,9 +1,6 @@
-import flwr as fl, numpy as np, os, sys
+import flwr as fl, numpy as np, os, psutil
 from flwr.common.logger import log
 from logging import INFO
-curdir = os.path.dirname(__file__)
-sys.path.append(os.path.join(curdir, '../../'))
-from aws_management.aws_manager import AWSManager
 from datetime import datetime
 from typing import Literal, List
 
@@ -13,15 +10,6 @@ AWS_SESSION_TOKEN = os.environ['AWS_LAB_SESSION_TOKEN']
 AWS_REGION = os.environ['AWS_REGION']
 AWS_KEY_PAIR = os.environ['AWS_KEY_PAIR']
 
-cloudwatch_manager = AWSManager(
-    service='cloudwatch',
-    aws_access_key=AWS_ACCESS_KEY,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    aws_session_token=AWS_SESSION_TOKEN,
-    aws_region=AWS_REGION,
-    aws_key_pair=AWS_KEY_PAIR
-)
-
 class UniversalClient(fl.client.NumPyClient):
     def __init__(
             self,
@@ -29,7 +17,7 @@ class UniversalClient(fl.client.NumPyClient):
             train_dataset: List[Literal['tf.data.Dataset']],
             test_dataset: List[Literal['tf.data.Dataset']],
             instance_id: str,
-            epochs=1, batch_size=32, cloudwatch_manager: AWSManager = cloudwatch_manager
+            epochs=1, batch_size=32
     ):
         '''
         Initialize universal Flower client. 
@@ -57,10 +45,6 @@ class UniversalClient(fl.client.NumPyClient):
 
         batch_size : int
             Batch size for model training
-
-        cloudwatch_manager : AWSManager
-            Custom class `AWSManager` initialized with `service='cloudwatch'` argument \n
-            Needed for CPU usage monitoring during `fit()` and `evaluate()`
         '''
         self.model = model
         self.train_dataset = train_dataset
@@ -68,7 +52,6 @@ class UniversalClient(fl.client.NumPyClient):
         self.epochs = epochs
         self.batch_size = batch_size
         self.instance_id = instance_id
-        self.cloudwatch_manager=cloudwatch_manager
 
 
     def get_parameters(self, config):
@@ -85,12 +68,16 @@ class UniversalClient(fl.client.NumPyClient):
         '''
         self.model.set_weights(parameters)
         # start point of CPU usage monitoring
-        start_time = datetime.utcnow()
+        start_cpu_time = psutil.cpu_percent()
         self.model.fit(self.train_dataset)
         # end point of CPU usage monitoring
         end_time = datetime.utcnow()
+        cpu_usage = psutil.cpu_percent(interval=None, percpu=False)
         # measure CPU usage monitoring
-        cpu_usage = self.cloudwatch_manager.get_metric_statistic_cloudwatch(instance_id=self.instance_id, start_time=start_time, end_time=end_time)
+        cpu_usage = {
+            'timestamp': end_time,
+            'cpu_utilization': cpu_usage
+        }
         # log CPU usage monitoring
         log(INFO, f'Instance {self.instance_id} : CPU usage history during fit() : {cpu_usage}')
         return [np.asarray(v) for v in self.model.get_weights()], sum([len(i[1]) for i in self.train_dataset.as_numpy_iterator()]), {}
@@ -103,12 +90,16 @@ class UniversalClient(fl.client.NumPyClient):
         '''
         self.model.set_weights(parameters)
         # start point of CPU usage monitoring
-        start_time = datetime.utcnow()
+        start_cpu_time = psutil.cpu_percent()
         loss, accuracy = self.model.evaluate(self.test_dataset)
         # end point of CPU usage monitoring
         end_time = datetime.utcnow()
+        cpu_usage = psutil.cpu_percent(interval=None, percpu=False)
         # measure CPU usage monitoring
-        cpu_usage = self.cloudwatch_manager.get_metric_statistic_cloudwatch(instance_id=self.instance_id, start_time=start_time, end_time=end_time)
+        cpu_usage = {
+            'timestamp': end_time,
+            'cpu_utilization': cpu_usage
+        }
         # log CPU usage monitoring
         log(INFO, f'Instance {self.instance_id} : CPU usage history during evaluate() : {cpu_usage}')
         return loss, sum([len(i[1]) for i in self.train_dataset.as_numpy_iterator()]), {'accuracy': float(accuracy)}
