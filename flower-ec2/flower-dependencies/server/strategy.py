@@ -15,7 +15,8 @@ class ServerStrategy:
             min_fit_clients: int,
             min_evaluate_clients: int,
             evaluate_fn: Callable,
-            initial_parameters: fl.common.Parameters
+            initial_parameters: fl.common.Parameters,
+            **kwargs
     ) -> None:
         '''
         Parameters of `fl.server.strategy.Strategy` and custom ones
@@ -56,5 +57,6 @@ class ServerStrategy:
             min_fit_clients = min_fit_clients,
             min_evaluate_clients = min_evaluate_clients,
             evaluate_fn = evaluate_fn,
-            initial_parameters = initial_parameters
+            initial_parameters = initial_parameters,
+            **kwargs
         )

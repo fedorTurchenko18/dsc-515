@@ -86,7 +86,7 @@ if __name__=='__main__':
     log_dir = os.path.abspath(__file__)
     log_dir = log_dir[:log_dir.rindex('/')]
     log_file = f'{log_dir}/server_log.txt'
-    fl.common.logger.configure(identifier='myFlowerExperiment', filename=log_file)
+    fl.common.logger.configure(identifier=f'{backend}-{strategy_str}-run.txt', filename=log_file)
 
     fl.server.start_server(
         server_address='0.0.0.0:8080',
