@@ -275,6 +275,54 @@ class AWSManager:
             return {'Error writing object to S3': e}
         
     
+    def download_from_s3_bucket(self, local_file_path: str, object_key: str, bucket_name: str = 'houseware-images-federated-learning-simulation-log') -> dict:
+        '''
+        Download Flower Federated Learning simulation log file from the bucket
+
+        Parameters
+        ----------
+        local_file_path : str
+            Local path to save the log to
+
+        object_key : str
+            Path to create for the log file inside the bucket \n
+            Follow naming convention in such way that it is evident with which parameters the simulation was launched
+
+        bucket_name : str = 'houseware-images-federated-learning-simulation-log'
+            Name of the bucket where log is stored
+        
+        Returns
+        -------
+
+        Operation response in a JSON format
+        '''
+        try:
+            response = self.client.download_file(bucket_name, object_key, local_file_path)
+        except ClientError as e:
+            return {'error': e}
+        return response
+    
+
+    def delete_s3_bucket(self, bucket_name: str = 'houseware-images-federated-learning-simulation-log') -> dict:
+        '''
+        Delete the bucket with Flower Federated Learning simulation log file
+
+        Parameters
+        ----------
+
+        bucket_name : str = 'houseware-images-federated-learning-simulation-log'
+            Name of the bucket where log is stored
+        
+        Returns
+        -------
+
+        Operation response in a JSON format
+        '''
+        bucket = self.resource.Bucket(bucket_name)
+        response = bucket.objects.all().delete()
+        return response
+        
+    
     def get_metric_statistic_cloudwatch(
             self, instance_id: str, start_time: datetime.datetime, end_time: datetime.datetime,
             metric_name: str = 'CPUUtilization', namespace: str = 'AWS/EC2', period: int = 10, stats: List[str]=['Average']
