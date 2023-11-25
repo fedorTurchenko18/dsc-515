@@ -106,7 +106,7 @@ if __name__ == '__main__':
                 )
                 # sometimes exception is not raised
                 # verify connection by reading log
-                with open('client_log.log', 'r') as f:
+                with open(log_file, 'r') as f:
                     log = f.readlines()
                 for line in log:
                     line_split = line.split(' | ')
