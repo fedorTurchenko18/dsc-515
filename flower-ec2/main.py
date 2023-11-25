@@ -98,7 +98,7 @@ if __name__=='__main__':
 
     local_client_results_paths = []
     local_server_results_paths = []
-    for strategy in STRATEGY:
+    for strategy in STRATEGY.split(' '):
         local_log_path = os.path.abspath(__file__)
         local_log_path = local_log_path[:local_log_path.rindex('/')]
         os.makedirs(f'{local_log_path}/federated-learning-results/{BACKEND}/{strategy}', exist_ok=True)
@@ -111,7 +111,7 @@ if __name__=='__main__':
         out_cond = False
         retry_attempts = 0
         while out_cond == False and retry_attempts < 60:
-            logger.info(f'Attempt #{retry_attempts} | Waiting for the server results from strategy {strategy}')
+            logger.info(f'Attempt #{retry_attempts+1} of 60 | Waiting for the server results from strategy {strategy}')
             fl_server_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=server_local_log_path, object_key=f'{BACKEND}/{strategy}/server_log.log')
             fl_client_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=client_local_log_path, object_key=f'{BACKEND}/{strategy}/client_log.log')
             try:
@@ -130,7 +130,7 @@ if __name__=='__main__':
     ## clean-up
     # terminate ec2 instances
     logger.info('Terminating ec2 instances...')
-    ec2_manager.terminate_instance([flower_server[0].instance_id]+[i.instance_id for i in flower_clients])
+    ec2_manager.terminate_instance([flower_server[0].instance_id]+[i for i in flower_clients])
     logger.info('Done')
     
     # empty and delete s3 bucket
