@@ -4,6 +4,7 @@ sys.path.append(os.path.join(curdir, '../../'))
 from aws_management.aws_manager import AWSManager
 from dotenv import load_dotenv
 load_dotenv()
+from loguru import logger
 
 if __name__ == '__main__':
 
@@ -121,6 +122,7 @@ if __name__ == '__main__':
                 out_cond = False
                 reconnect_attemps += 1
                 time.sleep(10)
-
+        
+        logger.info(f'Writing {log_file} to s3')
         # save FL log to s3
         write_to_s3_bucket_response = s3_manager.write_to_s3_bucket(log_file=log_file, object_key=f'{backend}/{strategy_str}/client_log.log')
