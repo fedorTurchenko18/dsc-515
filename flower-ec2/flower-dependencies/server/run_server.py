@@ -96,7 +96,6 @@ if __name__=='__main__':
             strategy=strat_wrapper.strategy,
             config=fl.server.ServerConfig(num_rounds=num_rounds)
         )
-        print('started server')
 
         # save FL log to s3
         write_to_s3_bucket_response = s3_manager.write_to_s3_bucket(log_file=log_file, object_key=f'{backend}/{strategy_str}/server_log.log')

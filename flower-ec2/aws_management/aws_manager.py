@@ -87,9 +87,6 @@ class AWSManager:
                 UserData=startup_script,
                 **ec2_config['clients']
             )
-            # assure the last created instance is running
-            # waiting for full initialization is not necessary
-            instance[-1].wait_until_running()
         elif instance_type=='server':
             instance = self.resource.create_instances(
                 MinCount=n_instances,

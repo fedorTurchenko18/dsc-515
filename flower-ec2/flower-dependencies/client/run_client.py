@@ -102,7 +102,18 @@ if __name__ == '__main__':
                     server_address=f'{server_public_ip}:8080',
                     client=client
                 )
-                out_cond = True
+                # sometimes exception is not raised
+                # verify connection by reading log
+                with open('client_log.log', 'r') as f:
+                    log = f.readlines()
+                for line in log:
+                    line_split = line.split(' | ')
+                    if 'TRANSIENT_FAILURE' in line_split[-1]:
+                        out_cond = False
+                        reconnect_attemps += 1
+                        time.sleep(10)
+                    else:
+                        out_cond = True
             except:
                 # connection to the server has failed
                 # rerun the loop
