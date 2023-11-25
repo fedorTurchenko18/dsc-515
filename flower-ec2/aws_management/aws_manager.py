@@ -1,4 +1,4 @@
-import boto3, yaml, os, datetime
+import boto3, yaml, os, datetime, uuid
 from botocore.exceptions import ClientError
 from typing import Literal, List, Dict, Union
 from loguru import logger
@@ -7,7 +7,7 @@ ec2_config_path = os.path.abspath(__file__)
 ec2_config_path = ec2_config_path[:ec2_config_path.rindex('/')]
 with open(f'{ec2_config_path}/ec2_config.yaml', 'rb') as f:
     ec2_config = yaml.safe_load(f)
-
+BUCKET_NAME = str(uuid.uuid4())
 
 class AWSManager:
     '''
@@ -128,7 +128,7 @@ class AWSManager:
 
         Operation response in a JSON format
         '''
-        response = self.resource.terminate_instances(InstanceIds=instance_ids)
+        response = self.client.terminate_instances(InstanceIds=instance_ids)
         return response
     
 
@@ -208,15 +208,15 @@ class AWSManager:
         return response
     
 
-    def create_s3_bucket(self, bucket_name: str = 'houseware-images-federated-learning-simulation-log') -> dict:
+    def create_s3_bucket(self, bucket_name: str = BUCKET_NAME) -> dict:
         '''
         Create s3 bucket to store logs from Flower Federated Learning simultations
 
         Parameters
         ----------
 
-        bucket_name : str = 'houseware-images-federated-learning-simulation-log'
-            Name of the bucket where logs will be stored
+        bucket_name : str = `uuid.uuid4()`
+            Name of the bucket where logs will be stored. UUID is used to assure unique bucket name
         
         Returns
         -------
@@ -239,7 +239,7 @@ class AWSManager:
                 return {'Error checking bucket existence': e}
             
     
-    def write_to_s3_bucket(self, log_file: str, object_key: str, bucket_name: str = 'houseware-images-federated-learning-simulation-log') -> dict:
+    def write_to_s3_bucket(self, log_file: str, object_key: str, bucket_name: str = BUCKET_NAME) -> dict:
         '''
         Write Flower Federated Learning simulation log file to the bucket
 
@@ -252,8 +252,8 @@ class AWSManager:
             Path to create for the log file inside the bucket \n
             Follow naming convention in such way that it is evident with which parameters the simulation was launched
 
-        bucket_name : str = 'houseware-images-federated-learning-simulation-log'
-            Name of the bucket where logs will be stored
+        bucket_name : str = `uuid.uuid4()`
+            Name of the bucket where logs will be stored. UUID is used to assure unique bucket name
         
         Returns
         -------
@@ -275,7 +275,7 @@ class AWSManager:
             return {'Error writing object to S3': e}
         
     
-    def download_from_s3_bucket(self, local_file_path: str, object_key: str, bucket_name: str = 'houseware-images-federated-learning-simulation-log') -> dict:
+    def download_from_s3_bucket(self, local_file_path: str, object_key: str, bucket_name: str = BUCKET_NAME) -> dict:
         '''
         Download Flower Federated Learning simulation log file from the bucket
 
@@ -288,8 +288,8 @@ class AWSManager:
             Path to create for the log file inside the bucket \n
             Follow naming convention in such way that it is evident with which parameters the simulation was launched
 
-        bucket_name : str = 'houseware-images-federated-learning-simulation-log'
-            Name of the bucket where log is stored
+        bucket_name : str = `uuid.uuid4()`
+            Name of the bucket where log is stored. UUID is used to assure unique bucket name
         
         Returns
         -------
@@ -303,15 +303,15 @@ class AWSManager:
         return response
     
 
-    def delete_s3_bucket(self, bucket_name: str = 'houseware-images-federated-learning-simulation-log') -> dict:
+    def delete_s3_bucket(self, bucket_name: str = BUCKET_NAME) -> dict:
         '''
         Delete the bucket with Flower Federated Learning simulation log file
 
         Parameters
         ----------
 
-        bucket_name : str = 'houseware-images-federated-learning-simulation-log'
-            Name of the bucket where log is stored
+        bucket_name : str = `uuid.uuid4()`
+            Name of the bucket where log is stored. UUID is used to assure unique bucket name
         
         Returns
         -------

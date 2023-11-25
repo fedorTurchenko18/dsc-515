@@ -123,7 +123,9 @@ if __name__=='__main__':
                 logger.info(f'Successfully fetched logs for {strategy} from s3. Waiting for the next strategy results...')
                 out_cond = True
         else:
-            logger.info(f'Falied to fetch the logs for {strategy} from s3. Waiting for the next strategy results...')
+            if retry_attempts == 60:
+                logger.info(f'Falied to fetch the logs for {strategy} from s3. Waiting for the next strategy results...')
+
     end = time.time()
     logger.info(f'Workflow took {end-start} seconds')
     
@@ -140,7 +142,7 @@ if __name__=='__main__':
             checks.add(True)
         else:
             checks.add(False)
-    if len(checks) != 1:
-        logger.info('Cannot delete bucket as som of the files were not donwloaded. You have to do it manually from AWS UI')
+    if False in checks:
+        logger.info('Cannot delete bucket as some of the files were not donwloaded. You have to do it manually from AWS UI')
     else:
         s3_manager.delete_s3_bucket()
