@@ -8,6 +8,7 @@ sys.path.append(os.path.join(curdir, '../../'))
 from aws_management.aws_manager import AWSManager
 from dotenv import load_dotenv
 load_dotenv()
+from loguru import logger
 
 if __name__=='__main__':
     cur_abs_path = os.path.abspath('.')
@@ -75,6 +76,9 @@ if __name__=='__main__':
         'FedAdam': fl.server.strategy.FedAdam
     }
 
+    log_dir = os.path.abspath(__file__)
+    log_dir = log_dir[:log_dir.rindex('/')]
+
     for strategy_str in strategies:
         strategy = strategy_mapping[strategy_str]
         strat_wrapper = ServerStrategy(
@@ -86,11 +90,10 @@ if __name__=='__main__':
             initial_parameters=initial_parameters
         )
 
-        log_dir = os.path.abspath(__file__)
-        log_dir = log_dir[:log_dir.rindex('/')]
-        log_file = f'{log_dir}/server_log.log'
+        log_file = f'{log_dir}/{backend}_{strategy_str}_server_log.log'
         fl.common.logger.configure(identifier=f'{backend}-{strategy_str}-run', filename=log_file)
 
+        logger.info(f'Starting server with {strategy_str} strategy')
         fl.server.start_server(
             server_address='0.0.0.0:8080',
             strategy=strat_wrapper.strategy,

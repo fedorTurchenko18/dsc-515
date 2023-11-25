@@ -83,9 +83,9 @@ if __name__ == '__main__':
         aws_region=AWS_REGION,
         aws_key_pair=AWS_KEY_PAIR
     )
+
     log_dir = os.path.abspath(__file__)
     log_dir = log_dir[:log_dir.rindex('/')]
-    log_file = f'{log_dir}/client_log.log'
 
     for strategy_str in strategies:
         out_cond = False
@@ -96,6 +96,7 @@ if __name__ == '__main__':
                 # this is needed to make sure that when the server
                 # goes on another iteration of strategy
                 # client waits until its new startup
+                log_file = f'{log_dir}/{backend}_{strategy_str}_client_log.log'
                 fl.common.logger.configure(identifier=f'{backend}-{strategy_str}-run', filename=log_file)
 
                 fl.client.start_numpy_client(

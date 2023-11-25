@@ -99,8 +99,8 @@ if __name__=='__main__':
         out_cond = False
         retry_attempts = 0
         while out_cond == False and retry_attempts < 60:
-            fl_server_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=server_local_log_path, object_key=f'{BACKEND}/{strategy}/server_log.log')
-            fl_client_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=client_local_log_path, object_key=f'{BACKEND}/{strategy}/client_log.log')
+            fl_server_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=server_local_log_path, object_key=f'{BACKEND}/{strategy}/{BACKEND}_{strategy}_server_log.log')
+            fl_client_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=client_local_log_path, object_key=f'{BACKEND}/{strategy}/{BACKEND}_{strategy}_client_log.log')
             try:
                 if 'error' in fl_server_log_download_response or 'error' in fl_client_log_download_response:
                     out_cond = False
