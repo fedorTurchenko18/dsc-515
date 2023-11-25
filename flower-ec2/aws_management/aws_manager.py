@@ -1,6 +1,7 @@
 import boto3, yaml, os, datetime
 from botocore.exceptions import ClientError
 from typing import Literal, List, Dict, Union
+from loguru import logger
 
 ec2_config_path = os.path.abspath(__file__)
 ec2_config_path = ec2_config_path[:ec2_config_path.rindex('/')]
@@ -87,6 +88,7 @@ class AWSManager:
                 UserData=startup_script,
                 **ec2_config['clients']
             )
+            logger.info('Succesfully created Client ec2 instance')
         elif instance_type=='server':
             instance = self.resource.create_instances(
                 MinCount=n_instances,
@@ -106,6 +108,7 @@ class AWSManager:
                 ],
                 InstanceIds=[i.instance_id for i in instance]
             )
+            logger.info('Succesfully created Server ec2 instance')
         
         return instance
     
@@ -294,7 +297,7 @@ class AWSManager:
         Operation response in a JSON format
         '''
         try:
-            response = self.client.download_file(bucket_name, object_key, local_file_path)
+            response = self.resource.meta.client.download_file(bucket_name, object_key, local_file_path)
         except ClientError as e:
             return {'error': e}
         return response
@@ -315,9 +318,17 @@ class AWSManager:
 
         Operation response in a JSON format
         '''
-        bucket = self.resource.Bucket(bucket_name)
-        response = bucket.objects.all().delete()
-        return response
+        bucket_contents = self.client.list_objects(Bucket=bucket_name)
+        objects_to_delete = [{k: v} for d in bucket_contents['Contents'] for k, v in d.items() if k=='Key']
+        objects_delete_request = self.client.delete_objects(
+            Bucket=bucket_name,
+            Delete={
+                'Objects': objects_to_delete,
+                'Quiet': False
+            }
+        )
+        bucket_delete_response = self.client.delete_bucket(Bucket=bucket_name)
+        return bucket_delete_response
         
     
     def get_metric_statistic_cloudwatch(

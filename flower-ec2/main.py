@@ -1,6 +1,7 @@
 import os, argparse, time
 from dotenv import load_dotenv
 from aws_management.aws_manager import AWSManager
+from loguru import logger
 
 if __name__=='__main__':
     start = time.time()
@@ -22,6 +23,8 @@ if __name__=='__main__':
     NUM_ROUNDS = args.num_rounds
     STRATEGY = ' '.join(args.strategy)
     BACKEND = args.backend
+
+    logger.info(f"Starting workflow with parameters:\nNumber of Clients: {N_CLIENT_INSTANCES}\nClients' backend: {BACKEND}\nServer strategy: {STRATEGY}\nNumber of FL rounds: {NUM_ROUNDS}")
 
     ec2_manager = AWSManager(
         service='ec2',
@@ -53,6 +56,7 @@ if __name__=='__main__':
     }.items():
         server_startup_script = server_startup_script.replace(to_replace, replacement)
 
+    logger.info('Starting server...')
     flower_server = ec2_manager.create_instance('server', startup_script=server_startup_script, n_instances=1)
 
     # Extract the public IP address from the response
@@ -78,6 +82,7 @@ if __name__=='__main__':
 
     flower_clients = []
     for idx in range(N_CLIENT_INSTANCES):
+        logger.info(f'Starting #{idx+1} Client...')
         client_specific_startup_script = client_startup_script.replace('DATA_INDEX', str(idx))
         flower_client = ec2_manager.create_instance('clients', startup_script=client_specific_startup_script, n_instances=1)
         flower_clients.append(flower_client[0].instance_id)
@@ -90,15 +95,23 @@ if __name__=='__main__':
         aws_region=AWS_REGION,
         aws_key_pair=AWS_KEY_PAIR
     )
+
+    local_client_results_paths = []
+    local_server_results_paths = []
     for strategy in STRATEGY:
         local_log_path = os.path.abspath(__file__)
         local_log_path = local_log_path[:local_log_path.rindex('/')]
+        os.makedirs(f'{local_log_path}/federated-learning-results/{BACKEND}/{strategy}', exist_ok=True)
         server_local_log_path = f'{local_log_path}/federated-learning-results/{BACKEND}/{strategy}/server_log.log'
         client_local_log_path = f'{local_log_path}/federated-learning-results/{BACKEND}/{strategy}/client_log.log'
+
+        local_server_results_paths.append(server_local_log_path)
+        local_client_results_paths.append(client_local_log_path)
 
         out_cond = False
         retry_attempts = 0
         while out_cond == False and retry_attempts < 60:
+            logger.info(f'Attempt #{retry_attempts} | Waiting for the server results from strategy {strategy}')
             fl_server_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=server_local_log_path, object_key=f'{BACKEND}/{strategy}/server_log.log')
             fl_client_log_download_response = s3_manager.download_from_s3_bucket(local_file_path=client_local_log_path, object_key=f'{BACKEND}/{strategy}/client_log.log')
             try:
@@ -107,14 +120,27 @@ if __name__=='__main__':
                     retry_attempts += 1
                     time.sleep(60)
             except TypeError:
+                logger.info(f'Successfully fetched logs for {strategy} from s3. Waiting for the next strategy results...')
                 out_cond = True
         else:
-            print('Falied to fetch the logs from s3')
+            logger.info(f'Falied to fetch the logs for {strategy} from s3. Waiting for the next strategy results...')
     end = time.time()
-    print(f'Workflow took {end-start} seconds')
-    # clean-up
+    logger.info(f'Workflow took {end-start} seconds')
+    
+    ## clean-up
+    # terminate ec2 instances
+    logger.info('Terminating ec2 instances...')
     ec2_manager.terminate_instance([flower_server[0].instance_id]+[i.instance_id for i in flower_clients])
-    if os.path.isfile(server_local_log_path) and os.path.isfile(server_local_log_path):
-        s3_manager.delete_s3_bucket()
+    logger.info('Done')
+    
+    # empty and delete s3 bucket
+    for s_p, c_p in zip(local_server_results_paths, local_client_results_paths):
+        checks = set()
+        if os.path.isfile(s_p) and os.path.isfile(c_p):
+            checks.add(True)
+        else:
+            checks.add(False)
+    if len(checks) != 1:
+        logger.info('Cannot delete bucket as som of the files were not donwloaded. You have to do it manually from AWS UI')
     else:
-        print('Cannot delete bucket as the files were not donwloaded. You have to do it manually from AWS UI')
+        s3_manager.delete_s3_bucket()
