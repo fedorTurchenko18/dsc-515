@@ -1,6 +1,6 @@
 clients:
   ImageId: ami-05c13eab67c5d8861
-  InstanceType: t2.medium
+  InstanceType: r5.large
   BlockDeviceMappings:
     - DeviceName: '/dev/sdh'
       Ebs:
@@ -9,7 +9,7 @@ clients:
 
 server:
   ImageId: ami-05c13eab67c5d8861
-  InstanceType: t2.large
+  InstanceType: r5.large
   BlockDeviceMappings:
     - DeviceName: '/dev/sdh'
       Ebs:
