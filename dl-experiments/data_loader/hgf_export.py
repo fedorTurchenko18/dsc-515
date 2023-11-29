@@ -320,7 +320,7 @@ class HGFresource:
 
 
 
-    def load_model(self, repo: str, filename: Optional[Union[str, dict]] = None) -> Union[BERTopic, Top2Vec, tf.keras.Sequential]:
+    def load_model(self, repo: str, filename: Optional[Union[str, dict]] = None, model_type: Literal['seq', 'func'] = None) -> Union[BERTopic, Top2Vec, tf.keras.Sequential]:
         '''
         Load model from Hugging Face organization repository
 
@@ -357,7 +357,7 @@ class HGFresource:
             model = self.__load_top2vec_model(repo, filename)
         else:
             # deep learning model
-            model = self.__load_dl_model(repo, filename)
+            model = self.__load_dl_model(repo, filename, model_type)
 
         return model
     
@@ -429,7 +429,7 @@ class HGFresource:
         return model
     
 
-    def __load_dl_model(self, repo: str, filename: dict) -> tf.keras.Sequential:
+    def __load_dl_model(self, repo: str, filename: dict, model_type: Literal['seq', 'func']) -> tf.keras.Sequential:
         '''
         Load deep learning model from Hugging Face organization repository
 
@@ -447,10 +447,13 @@ class HGFresource:
             }
             ```
 
+        model_type : Literal['seq', 'func']
+            Either Sequential or Functional API based model to load
+        
         Returns
         -------
 
-        Trained deep learning model
+        Deep learning model
         '''
         # download weights
         weights_file = self.load_file(repo=repo, filename=filename['model_weights'])
@@ -460,11 +463,31 @@ class HGFresource:
         with open(model_config_file, 'r') as json_file:
             model_config = json_file.read()
         model_config = json.loads(model_config)
-        # compile model
-        model = tf.keras.Sequential.from_config(model_config)
-        # set weights
-        model.load_weights(weights_file, by_name=True)
-        
+
+        if model_type == 'seq':
+            model = self.sequential_model_from_config(model_config, weights_file)
+            return model, weights_file
+        else:
+            inputs, outputs = self.functional_model_from_config(model_config)
+            return inputs, outputs, weights_file
+    
+    
+    def functional_model_from_config(self, config):
+        layers = config['layers']
+        deserialized_layers = [tf.keras.layers.deserialize(layer) for layer in layers]
+
+        input_layer = deserialized_layers[0]
+        outputs = input_layer.output
+        for dszd_layer in deserialized_layers:
+            outputs = dszd_layer(outputs)
+        inputs = input_layer.input
+
+        return inputs, outputs
+    
+
+    def sequential_model_from_config(self, config):
+        # re-create model
+        model = tf.keras.Sequential.from_config(config)
         return model
     
 

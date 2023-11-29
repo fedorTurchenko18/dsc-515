@@ -1,11 +1,15 @@
-import tensorflow as tf
+import tensorflow as tf, numpy as np, copy
 from tensorflow import keras
+
 
 class CustomModel(keras.Model):
     '''
     Create a custom tensorflow model via custom training loop functions
     which modify the functionality of `.fit()` method
     '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
 
     @tf.function
     def train_step(self, data):
@@ -25,6 +29,7 @@ class CustomModel(keras.Model):
 
         # Return a dictionary mapping metric names to their current value
         return {m.name: m.result() for m in self.metrics}
+
 
     @tf.function
     def test_step(self, data):
